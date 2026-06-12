@@ -1,0 +1,1601 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>恒识 Evercog - 手机端原型</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    /* ==================== Reset & Base ==================== */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      font-family: 'Outfit', sans-serif;
+      background: #F3F4F6;
+      color: #111827;
+      -webkit-font-smoothing: antialiased;
+      overflow: hidden;
+      height: 100vh;
+    }
+
+    /* ==================== Phone Frame ==================== */
+    .phone-frame {
+      width: 390px;
+      height: 844px;
+      margin: 20px auto;
+      background: #F3F4F6;
+      border-radius: 40px;
+      border: 3px solid #111827;
+      overflow: hidden;
+      position: relative;
+      box-shadow: 0 0 0 8px #111827;
+    }
+
+    /* ==================== Status Bar ==================== */
+    .status-bar {
+      height: 54px;
+      background: #111827;
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      padding: 0 28px 8px;
+      color: white;
+      font-size: 14px;
+      font-weight: 600;
+    }
+    .status-bar .notch {
+      width: 126px;
+      height: 34px;
+      background: #111827;
+      border-radius: 0 0 20px 20px;
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+
+    /* ==================== Screen Container ==================== */
+    .screen {
+      display: none;
+      height: calc(100% - 54px - 72px);
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    .screen.active { display: block; }
+
+    /* ==================== Top Bar ==================== */
+    .top-bar {
+      background: white;
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    .top-bar h1 {
+      font-size: 22px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+    .top-bar .subtitle {
+      font-size: 12px;
+      color: #6B7280;
+      font-weight: 500;
+    }
+
+    /* ==================== Avatar ==================== */
+    .avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: 700;
+      font-size: 16px;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    .avatar:active { transform: scale(0.95); }
+
+    /* ==================== Stats Grid ==================== */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      padding: 16px 20px;
+    }
+    .stat-card {
+      background: white;
+      border-radius: 8px;
+      padding: 16px;
+      transition: transform 0.2s;
+      cursor: pointer;
+    }
+    .stat-card:active { transform: scale(0.97); }
+    .stat-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 12px;
+    }
+    .stat-icon svg { width: 22px; height: 22px; color: white; }
+    .stat-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: #6B7280;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .stat-value {
+      font-size: 32px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      line-height: 1.1;
+      margin-top: 4px;
+    }
+    .stat-change {
+      font-size: 11px;
+      color: #9CA3AF;
+      margin-top: 4px;
+      font-weight: 500;
+    }
+
+    /* ==================== Quick Actions ==================== */
+    .section-title {
+      font-size: 16px;
+      font-weight: 700;
+      padding: 20px 20px 12px;
+      letter-spacing: -0.01em;
+    }
+    .quick-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      padding: 0 20px 16px;
+    }
+    .quick-action {
+      background: white;
+      border-radius: 8px;
+      padding: 20px 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      transition: transform 0.2s;
+      cursor: pointer;
+    }
+    .quick-action:active { transform: scale(0.97); }
+    .quick-action-icon {
+      width: 52px;
+      height: 52px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 10px;
+    }
+    .quick-action-icon svg { width: 26px; height: 26px; color: white; }
+    .quick-action-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: #111827;
+    }
+
+    /* ==================== Activity List ==================== */
+    .activity-list {
+      padding: 0 20px 20px;
+    }
+    .activity-item {
+      background: white;
+      border-radius: 8px;
+      padding: 14px 16px;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      transition: transform 0.2s;
+      cursor: pointer;
+    }
+    .activity-item:active { transform: scale(0.98); }
+    .activity-time {
+      font-size: 12px;
+      font-weight: 600;
+      color: #9CA3AF;
+      min-width: 44px;
+    }
+    .activity-content { flex: 1; }
+    .activity-content .user {
+      font-size: 13px;
+      font-weight: 600;
+      color: #3B82F6;
+    }
+    .activity-content .action {
+      font-size: 13px;
+      font-weight: 500;
+      color: #111827;
+    }
+    .activity-content .target {
+      font-size: 11px;
+      color: #9CA3AF;
+      margin-top: 2px;
+    }
+    .badge {
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      color: white;
+      white-space: nowrap;
+    }
+
+    /* ==================== Bottom Tab Bar ==================== */
+    .tab-bar {
+      height: 72px;
+      background: white;
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      padding: 0 8px;
+      padding-bottom: 8px;
+      border-top: 2px solid #F3F4F6;
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 20;
+    }
+    .tab-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      padding: 6px 12px;
+      border-radius: 8px;
+      transition: all 0.2s;
+      cursor: pointer;
+      background: transparent;
+      border: none;
+      outline: none;
+    }
+    .tab-item svg {
+      width: 22px;
+      height: 22px;
+      color: #9CA3AF;
+      transition: color 0.2s;
+    }
+    .tab-item span {
+      font-size: 10px;
+      font-weight: 600;
+      color: #9CA3AF;
+      transition: color 0.2s;
+    }
+    .tab-item.active svg { color: #3B82F6; }
+    .tab-item.active span { color: #3B82F6; }
+    .tab-item:active { transform: scale(0.9); }
+
+    /* ==================== List Page ==================== */
+    .filter-bar {
+      display: flex;
+      gap: 8px;
+      padding: 12px 20px;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    .filter-bar::-webkit-scrollbar { display: none; }
+    .filter-chip {
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      white-space: nowrap;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: none;
+      outline: none;
+    }
+    .filter-chip.active {
+      background: #3B82F6;
+      color: white;
+    }
+    .filter-chip:not(.active) {
+      background: white;
+      color: #6B7280;
+    }
+    .filter-chip:active { transform: scale(0.95); }
+
+    .list-item {
+      background: white;
+      border-radius: 8px;
+      padding: 16px 20px;
+      margin: 0 20px 10px;
+      transition: transform 0.2s;
+      cursor: pointer;
+    }
+    .list-item:active { transform: scale(0.98); }
+    .list-item-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+    .list-item-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: #111827;
+      flex: 1;
+      line-height: 1.3;
+    }
+    .list-item-meta {
+      display: flex;
+      gap: 12px;
+      font-size: 11px;
+      color: #9CA3AF;
+      font-weight: 500;
+    }
+    .list-item-tags {
+      display: flex;
+      gap: 6px;
+      margin-top: 10px;
+      flex-wrap: wrap;
+    }
+    .tag {
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: 600;
+    }
+
+    /* ==================== Detail Page ==================== */
+    .detail-header {
+      background: white;
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    .back-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 6px;
+      background: #F3F4F6;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      border: none;
+      transition: transform 0.2s;
+    }
+    .back-btn:active { transform: scale(0.9); }
+    .back-btn svg { width: 20px; height: 20px; color: #111827; }
+    .detail-header h2 {
+      font-size: 18px;
+      font-weight: 700;
+      flex: 1;
+    }
+
+    .detail-section {
+      background: white;
+      margin: 12px 20px;
+      border-radius: 8px;
+      padding: 20px;
+    }
+    .detail-section-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #6B7280;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 12px;
+    }
+    .detail-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 2px solid #F3F4F6;
+    }
+    .detail-row:last-child { border-bottom: none; }
+    .detail-row-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: #6B7280;
+    }
+    .detail-row-value {
+      font-size: 14px;
+      font-weight: 600;
+      color: #111827;
+    }
+    .detail-content {
+      font-size: 14px;
+      line-height: 1.7;
+      color: #374151;
+    }
+    .detail-content p { margin-bottom: 12px; }
+    .detail-content strong { color: #111827; }
+
+    /* ==================== Action Buttons ==================== */
+    .action-bar {
+      padding: 16px 20px;
+      display: flex;
+      gap: 12px;
+    }
+    .btn {
+      flex: 1;
+      padding: 14px;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 600;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: none;
+      outline: none;
+    }
+    .btn:active { transform: scale(0.97); }
+    .btn-primary {
+      background: #3B82F6;
+      color: white;
+    }
+    .btn-primary:active { background: #2563EB; }
+    .btn-secondary {
+      background: #F3F4F6;
+      color: #111827;
+    }
+    .btn-outline {
+      background: transparent;
+      color: #3B82F6;
+      border: 4px solid #3B82F6;
+    }
+    .btn-outline:active { background: #3B82F6; color: white; }
+    .btn-success {
+      background: #10B981;
+      color: white;
+    }
+    .btn-danger {
+      background: #EF4444;
+      color: white;
+    }
+
+    /* ==================== Chat Interface ==================== */
+    .chat-container {
+      padding: 16px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .chat-bubble {
+      max-width: 85%;
+      padding: 14px 16px;
+      border-radius: 8px;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+    .chat-bubble.user {
+      background: #3B82F6;
+      color: white;
+      align-self: flex-end;
+      border-bottom-right-radius: 4px;
+    }
+    .chat-bubble.ai {
+      background: white;
+      color: #111827;
+      align-self: flex-start;
+      border-bottom-left-radius: 4px;
+    }
+    .chat-bubble .section-label {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-top: 10px;
+      margin-bottom: 4px;
+    }
+    .chat-bubble .section-label:first-child { margin-top: 0; }
+    .chat-bubble.user .section-label { color: rgba(255,255,255,0.7); }
+    .chat-bubble.ai .section-label { color: #3B82F6; }
+
+    .chat-input-bar {
+      display: flex;
+      gap: 8px;
+      padding: 12px 20px;
+      background: white;
+      position: sticky;
+      bottom: 0;
+    }
+    .chat-input {
+      flex: 1;
+      padding: 12px 16px;
+      border-radius: 6px;
+      border: 2px solid #E5E7EB;
+      font-size: 14px;
+      font-family: 'Outfit', sans-serif;
+      outline: none;
+      background: #F9FAFB;
+    }
+    .chat-input:focus {
+      background: white;
+      border-color: #3B82F6;
+    }
+    .chat-send {
+      width: 48px;
+      height: 48px;
+      border-radius: 6px;
+      background: #3B82F6;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      border: none;
+      transition: transform 0.2s;
+    }
+    .chat-send:active { transform: scale(0.9); }
+    .chat-send svg { width: 20px; height: 20px; color: white; }
+
+    /* ==================== SOP Progress ==================== */
+    .progress-bar {
+      height: 8px;
+      background: #E5E7EB;
+      border-radius: 4px;
+      overflow: hidden;
+      margin-top: 8px;
+    }
+    .progress-fill {
+      height: 100%;
+      border-radius: 4px;
+      transition: width 0.3s;
+    }
+
+    /* ==================== Score Display ==================== */
+    .score-circle {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 16px;
+    }
+    .score-value {
+      font-size: 28px;
+      font-weight: 800;
+      color: white;
+      line-height: 1;
+    }
+    .score-label {
+      font-size: 10px;
+      font-weight: 600;
+      color: rgba(255,255,255,0.8);
+    }
+
+    /* ==================== Hamburger Menu ==================== */
+    .menu-overlay {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 30;
+    }
+    .menu-overlay.show { display: block; }
+    .side-menu {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 280px;
+      height: 100%;
+      background: #111827;
+      z-index: 31;
+      transform: translateX(-100%);
+      transition: transform 0.3s;
+      overflow-y: auto;
+    }
+    .side-menu.show { transform: translateX(0); }
+    .side-menu-header {
+      background: #3B82F6;
+      padding: 24px 20px;
+    }
+    .side-menu-header h2 {
+      color: white;
+      font-size: 18px;
+      font-weight: 800;
+    }
+    .side-menu-header p {
+      color: rgba(255,255,255,0.7);
+      font-size: 12px;
+      margin-top: 4px;
+    }
+    .side-menu-nav { padding: 12px 8px; }
+    .side-menu-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      border-radius: 6px;
+      color: #9CA3AF;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: none;
+      background: none;
+      width: 100%;
+      text-align: left;
+    }
+    .side-menu-item svg { width: 20px; height: 20px; }
+    .side-menu-item:active { transform: scale(0.98); }
+    .side-menu-item.active {
+      background: #3B82F6;
+      color: white;
+    }
+    .side-menu-item.active svg { color: white; }
+
+    /* ==================== User Switcher Dropdown ==================== */
+    .user-dropdown {
+      display: none;
+      position: absolute;
+      top: 60px;
+      right: 20px;
+      width: 260px;
+      background: white;
+      border-radius: 8px;
+      border: 2px solid #E5E7EB;
+      z-index: 25;
+      overflow: hidden;
+    }
+    .user-dropdown.show { display: block; }
+    .user-dropdown-header {
+      padding: 10px 14px;
+      background: #F3F4F6;
+      font-size: 11px;
+      font-weight: 700;
+      color: #6B7280;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .user-option {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .user-option:active { background: #F3F4F6; }
+    .user-option .mini-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: 700;
+      font-size: 13px;
+    }
+    .user-option .user-info { flex: 1; }
+    .user-option .user-name {
+      font-size: 13px;
+      font-weight: 600;
+      color: #111827;
+    }
+    .user-option .user-dept {
+      font-size: 11px;
+      color: #9CA3AF;
+    }
+
+    /* ==================== Search Bar ==================== */
+    .search-bar {
+      padding: 12px 20px;
+    }
+    .search-input {
+      width: 100%;
+      padding: 12px 16px;
+      border-radius: 6px;
+      border: 2px solid #E5E7EB;
+      font-size: 14px;
+      font-family: 'Outfit', sans-serif;
+      outline: none;
+      background: white;
+      transition: border-color 0.2s;
+    }
+    .search-input:focus { border-color: #3B82F6; }
+
+    /* ==================== Color Variables ==================== */
+    .bg-blue { background: #3B82F6; }
+    .bg-emerald { background: #10B981; }
+    .bg-amber { background: #F59E0B; }
+    .bg-purple { background: #8B5CF6; }
+    .bg-indigo { background: #6366F1; }
+    .bg-pink { background: #EC4899; }
+    .bg-red { background: #EF4444; }
+    .bg-gray { background: #6B7280; }
+    .bg-cyan { background: #06B6D4; }
+    .text-blue { color: #3B82F6; }
+    .text-emerald { color: #10B981; }
+    .text-amber { color: #F59E0B; }
+    .text-purple { color: #8B5CF6; }
+    .text-red { color: #EF4444; }
+  </style>
+</head>
+<body>
+  <div class="phone-frame">
+    <!-- Status Bar -->
+    <div class="status-bar">
+      <span>9:41</span>
+      <div class="notch"></div>
+      <span>●●● WiFi 🔋</span>
+    </div>
+
+    <!-- Side Menu (Hamburger) -->
+    <div class="menu-overlay" id="menuOverlay" onclick="toggleMenu()"></div>
+    <div class="side-menu" id="sideMenu">
+      <div class="side-menu-header">
+        <h2>恒识 EVERCOG</h2>
+        <p>AI 政策情报与业务经验中台</p>
+      </div>
+      <nav class="side-menu-nav">
+        <button class="side-menu-item active" onclick="navigateTo('dashboard')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+          仪表盘
+        </button>
+        <button class="side-menu-item" onclick="navigateTo('policy')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+          政策链接池
+        </button>
+        <button class="side-menu-item" onclick="navigateTo('briefs')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          政策简报
+        </button>
+        <button class="side-menu-item" onclick="navigateTo('push')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          推送记录
+        </button>
+        <button class="side-menu-item" onclick="navigateTo('knowledge')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+          知识库
+        </button>
+        <button class="side-menu-item" onclick="navigateTo('experience')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          经验调用
+        </button>
+        <button class="side-menu-item" onclick="navigateTo('sop')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+          SOP 训练
+        </button>
+        <button class="side-menu-item" onclick="navigateTo('audit')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          审计日志
+        </button>
+      </nav>
+    </div>
+
+    <!-- ==================== SCREEN: Dashboard ==================== -->
+    <div class="screen active" id="screen-dashboard">
+      <div class="top-bar" style="position:relative;">
+        <div>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <button onclick="toggleMenu()" style="background:none;border:none;cursor:pointer;padding:4px;">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#111827" stroke-width="2.5"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+            </button>
+            <div>
+              <h1>仪表盘</h1>
+              <p class="subtitle">欢迎回来，张销售</p>
+            </div>
+          </div>
+        </div>
+        <div class="avatar bg-blue" onclick="toggleUserDropdown()" id="mainAvatar">张</div>
+        <!-- User Dropdown -->
+        <div class="user-dropdown" id="userDropdown">
+          <div class="user-dropdown-header">切换角色（演示模式）</div>
+          <div class="user-option" onclick="switchUser('张销售','sales','销售部','bg-blue')">
+            <div class="mini-avatar bg-blue">张</div>
+            <div class="user-info"><div class="user-name">张销售</div><div class="user-dept">销售部</div></div>
+            <span class="badge bg-blue" style="font-size:10px;">销售</span>
+          </div>
+          <div class="user-option" onclick="switchUser('李客服','customer_service','客服部','bg-emerald')">
+            <div class="mini-avatar bg-emerald">李</div>
+            <div class="user-info"><div class="user-name">李客服</div><div class="user-dept">客服部</div></div>
+            <span class="badge bg-emerald" style="font-size:10px;">客服</span>
+          </div>
+          <div class="user-option" onclick="switchUser('王运营','operations','运营部','bg-purple')">
+            <div class="mini-avatar bg-purple">王</div>
+            <div class="user-info"><div class="user-name">王运营</div><div class="user-dept">运营部</div></div>
+            <span class="badge bg-purple" style="font-size:10px;">运营</span>
+          </div>
+          <div class="user-option" onclick="switchUser('赵财务','finance','财务部','bg-amber')">
+            <div class="mini-avatar bg-amber">赵</div>
+            <div class="user-info"><div class="user-name">赵财务</div><div class="user-dept">财务部</div></div>
+            <span class="badge bg-amber" style="font-size:10px;">财务</span>
+          </div>
+          <div class="user-option" onclick="switchUser('周管理员','admin','管理层','bg-red')">
+            <div class="mini-avatar bg-red">周</div>
+            <div class="user-info"><div class="user-name">周管理员</div><div class="user-dept">管理层</div></div>
+            <span class="badge bg-red" style="font-size:10px;">管理员</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stats -->
+      <div class="stats-grid">
+        <div class="stat-card" onclick="navigateTo('policy')">
+          <div class="stat-icon bg-blue">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+          </div>
+          <p class="stat-label">政策链接</p>
+          <p class="stat-value text-blue">3</p>
+          <p class="stat-change">+1 本周</p>
+        </div>
+        <div class="stat-card" onclick="navigateTo('briefs')">
+          <div class="stat-icon bg-emerald">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          </div>
+          <p class="stat-label">政策简报</p>
+          <p class="stat-value text-emerald">2</p>
+          <p class="stat-change">+1 待审核</p>
+        </div>
+        <div class="stat-card" onclick="navigateTo('knowledge')">
+          <div class="stat-icon bg-purple">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+          </div>
+          <p class="stat-label">知识卡</p>
+          <p class="stat-value" style="color:#8B5CF6;">3</p>
+          <p class="stat-change">3 已发布</p>
+        </div>
+        <div class="stat-card" onclick="navigateTo('push')">
+          <div class="stat-icon bg-amber">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          </div>
+          <p class="stat-label">推送记录</p>
+          <p class="stat-value text-amber">1</p>
+          <p class="stat-change">1 已读</p>
+        </div>
+        <div class="stat-card" onclick="navigateTo('experience')">
+          <div class="stat-icon bg-indigo">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          </div>
+          <p class="stat-label">经验调用</p>
+          <p class="stat-value" style="color:#6366F1;">1</p>
+          <p class="stat-change">今日</p>
+        </div>
+        <div class="stat-card" onclick="navigateTo('sop')">
+          <div class="stat-icon bg-pink">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+          </div>
+          <p class="stat-label">SOP 任务</p>
+          <p class="stat-value" style="color:#EC4899;">1</p>
+          <p class="stat-change">进行中</p>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon bg-red">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          </div>
+          <p class="stat-label">待审核</p>
+          <p class="stat-value text-red">1</p>
+          <p class="stat-change">需处理</p>
+        </div>
+        <div class="stat-card" onclick="navigateTo('audit')">
+          <div class="stat-icon bg-gray">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          </div>
+          <p class="stat-label">审计日志</p>
+          <p class="stat-value" style="color:#6B7280;">6</p>
+          <p class="stat-change">今日</p>
+        </div>
+      </div>
+
+      <!-- Quick Actions -->
+      <p class="section-title">快速入口</p>
+      <div class="quick-actions">
+        <div class="quick-action" onclick="navigateTo('policy')">
+          <div class="quick-action-icon bg-blue">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          </div>
+          <span class="quick-action-label">提交政策链接</span>
+        </div>
+        <div class="quick-action" onclick="navigateTo('knowledge')">
+          <div class="quick-action-icon bg-purple">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          </div>
+          <span class="quick-action-label">创建知识卡</span>
+        </div>
+        <div class="quick-action" onclick="navigateTo('experience')">
+          <div class="quick-action-icon bg-emerald">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          </div>
+          <span class="quick-action-label">经验问答</span>
+        </div>
+        <div class="quick-action" onclick="navigateTo('sop')">
+          <div class="quick-action-icon bg-amber">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+          </div>
+          <span class="quick-action-label">SOP 训练</span>
+        </div>
+      </div>
+
+      <!-- Recent Activity -->
+      <p class="section-title">最近活动</p>
+      <div class="activity-list">
+        <div class="activity-item">
+          <span class="activity-time">10:30</span>
+          <div class="activity-content">
+            <p><span class="user">王运营</span> <span class="action">创建政策简报</span></p>
+            <p class="target">个体工商户发展政策简报</p>
+          </div>
+          <span class="badge bg-blue">已审核</span>
+        </div>
+        <div class="activity-item">
+          <span class="activity-time">09:15</span>
+          <div class="activity-content">
+            <p><span class="user">赵财务</span> <span class="action">发布知识卡</span></p>
+            <p class="target">餐饮门店代账所需资料清单</p>
+          </div>
+          <span class="badge bg-emerald">已发布</span>
+        </div>
+        <div class="activity-item">
+          <span class="activity-time">09:00</span>
+          <div class="activity-content">
+            <p><span class="user">赵财务</span> <span class="action">发布知识卡</span></p>
+            <p class="target">餐饮门店常见税务风险</p>
+          </div>
+          <span class="badge bg-emerald">已发布</span>
+        </div>
+        <div class="activity-item">
+          <span class="activity-time">08:45</span>
+          <div class="activity-content">
+            <p><span class="user">周管理员</span> <span class="action">审核通过</span></p>
+            <p class="target">餐饮门店代账所需资料清单</p>
+          </div>
+          <span class="badge bg-emerald">通过</span>
+        </div>
+        <div class="activity-item">
+          <span class="activity-time">08:30</span>
+          <div class="activity-content">
+            <p><span class="user">张销售</span> <span class="action">经验调用</span></p>
+            <p class="target">餐饮客户初次咨询</p>
+          </div>
+          <span class="badge bg-blue">已生成</span>
+        </div>
+      </div>
+      <div style="height:20px;"></div>
+    </div>
+
+    <!-- ==================== SCREEN: Policy Links ==================== -->
+    <div class="screen" id="screen-policy">
+      <div class="detail-header">
+        <button class="back-btn" onclick="navigateTo('dashboard')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <h2>政策链接池</h2>
+        <div class="avatar bg-blue" style="width:36px;height:36px;font-size:14px;">张</div>
+      </div>
+      <div class="search-bar">
+        <input class="search-input" placeholder="搜索政策链接..." readonly>
+      </div>
+      <div class="filter-bar">
+        <button class="filter-chip active">全部</button>
+        <button class="filter-chip">待采集</button>
+        <button class="filter-chip">已采集</button>
+        <button class="filter-chip">已生成简报</button>
+        <button class="filter-chip">已推送</button>
+      </div>
+      <div class="list-item" onclick="navigateTo('policy-detail')">
+        <div class="list-item-header">
+          <div class="list-item-title">关于进一步支持个体工商户纾困发展的通知</div>
+          <span class="badge bg-emerald" style="margin-left:8px;">已生成简报</span>
+        </div>
+        <div class="list-item-meta">
+          <span>来源：国家税务总局</span>
+          <span>今天 10:20</span>
+        </div>
+        <div class="list-item-tags">
+          <span class="tag bg-blue" style="color:white;">个体工商户</span>
+          <span class="tag bg-amber" style="color:white;">税收优惠</span>
+        </div>
+      </div>
+      <div class="list-item">
+        <div class="list-item-header">
+          <div class="list-item-title">餐饮业疫情防控与复工复产指引</div>
+          <span class="badge bg-blue" style="margin-left:8px;">已采集</span>
+        </div>
+        <div class="list-item-meta">
+          <span>来源：市场监管总局</span>
+          <span>昨天 15:30</span>
+        </div>
+        <div class="list-item-tags">
+          <span class="tag bg-purple" style="color:white;">餐饮业</span>
+          <span class="tag bg-emerald" style="color:white;">复工复产</span>
+        </div>
+      </div>
+      <div class="list-item">
+        <div class="list-item-header">
+          <div class="list-item-title">小微企业融资担保降费奖补政策</div>
+          <span class="badge bg-amber" style="margin-left:8px;">待采集</span>
+        </div>
+        <div class="list-item-meta">
+          <span>来源：工信部</span>
+          <span>3天前</span>
+        </div>
+        <div class="list-item-tags">
+          <span class="tag bg-indigo" style="color:white;">小微企业</span>
+          <span class="tag bg-red" style="color:white;">融资</span>
+        </div>
+      </div>
+      <div class="action-bar" style="position:sticky;bottom:0;background:#F3F4F6;">
+        <button class="btn btn-primary">+ 提交新链接</button>
+      </div>
+    </div>
+
+    <!-- ==================== SCREEN: Policy Detail ==================== -->
+    <div class="screen" id="screen-policy-detail">
+      <div class="detail-header">
+        <button class="back-btn" onclick="navigateTo('policy')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <h2>政策详情</h2>
+        <span class="badge bg-emerald">已生成简报</span>
+      </div>
+      <div class="detail-section">
+        <div class="detail-section-title">基本信息</div>
+        <div class="detail-row">
+          <span class="detail-row-label">政策标题</span>
+          <span class="detail-row-value">关于进一步支持个体工商户纾困发展的通知</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-row-label">来源</span>
+          <span class="detail-row-value">国家税务总局</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-row-label">提交人</span>
+          <span class="detail-row-value">王运营</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-row-label">适用客户</span>
+          <span class="detail-row-value">个体工商户</span>
+        </div>
+      </div>
+      <div class="detail-section">
+        <div class="detail-section-title">AI 简报摘要</div>
+        <div class="detail-content">
+          <p><strong>📌 核心要点：</strong></p>
+          <p>该政策为个体工商户提供税收减免、社保缓缴、租金减免等多方面支持，适用于年营业额 500 万以下的个体工商户。</p>
+          <p><strong>🎯 行动建议：</strong></p>
+          <p>建议销售团队主动联系符合条件的个体工商户客户，告知政策红利，提供代账服务升级方案。</p>
+          <p><strong>⚠️ 风险提醒：</strong></p>
+          <p>需确认客户是否已在 2025 年度享受过同类优惠，避免重复申报。</p>
+        </div>
+      </div>
+      <div class="action-bar">
+        <button class="btn btn-outline">推送企微</button>
+        <button class="btn btn-primary">查看详情</button>
+      </div>
+    </div>
+
+    <!-- ==================== SCREEN: Policy Briefs ==================== -->
+    <div class="screen" id="screen-briefs">
+      <div class="detail-header">
+        <button class="back-btn" onclick="navigateTo('dashboard')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <h2>政策简报</h2>
+        <div class="avatar bg-blue" style="width:36px;height:36px;font-size:14px;">张</div>
+      </div>
+      <div class="filter-bar">
+        <button class="filter-chip active">全部</button>
+        <button class="filter-chip">待审核</button>
+        <button class="filter-chip">已审核</button>
+        <button class="filter-chip">已驳回</button>
+      </div>
+      <div class="list-item">
+        <div class="list-item-header">
+          <div class="list-item-title">个体工商户发展政策简报</div>
+          <span class="badge bg-emerald" style="margin-left:8px;">已审核</span>
+        </div>
+        <div class="list-item-meta">
+          <span>生成人：王运营</span>
+          <span>今天 10:30</span>
+        </div>
+        <p style="font-size:12px;color:#6B7280;margin-top:8px;line-height:1.5;">为个体工商户提供税收减免、社保缓缴、租金减免等多方面支持…</p>
+      </div>
+      <div class="list-item">
+        <div class="list-item-header">
+          <div class="list-item-title">餐饮业复工复产政策简报</div>
+          <span class="badge bg-amber" style="margin-left:8px;">待审核</span>
+        </div>
+        <div class="list-item-meta">
+          <span>生成人：王运营</span>
+          <span>昨天 16:00</span>
+        </div>
+        <p style="font-size:12px;color:#6B7280;margin-top:8px;line-height:1.5;">餐饮业疫情防控期间的复工复产指引与补贴政策解读…</p>
+      </div>
+    </div>
+
+    <!-- ==================== SCREEN: Knowledge Cards ==================== -->
+    <div class="screen" id="screen-knowledge">
+      <div class="detail-header">
+        <button class="back-btn" onclick="navigateTo('dashboard')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <h2>知识库</h2>
+        <div class="avatar bg-blue" style="width:36px;height:36px;font-size:14px;">张</div>
+      </div>
+      <div class="search-bar">
+        <input class="search-input" placeholder="搜索知识卡..." readonly>
+      </div>
+      <div class="filter-bar">
+        <button class="filter-chip active">全部</button>
+        <button class="filter-chip">资料清单</button>
+        <button class="filter-chip">税务流程</button>
+        <button class="filter-chip">风险提醒</button>
+        <button class="filter-chip">常见问题</button>
+      </div>
+      <div class="list-item" onclick="navigateTo('knowledge-detail')">
+        <div class="list-item-header">
+          <div class="list-item-title">餐饮门店代账所需资料清单</div>
+          <span class="badge bg-emerald" style="margin-left:8px;">已发布</span>
+        </div>
+        <div class="list-item-meta">
+          <span>赵财务</span>
+          <span>V1.0</span>
+        </div>
+        <div class="list-item-tags">
+          <span class="tag bg-purple" style="color:white;">资料清单</span>
+          <span class="tag bg-blue" style="color:white;">餐饮业</span>
+        </div>
+      </div>
+      <div class="list-item">
+        <div class="list-item-header">
+          <div class="list-item-title">餐饮门店常见税务风险</div>
+          <span class="badge bg-emerald" style="margin-left:8px;">已发布</span>
+        </div>
+        <div class="list-item-meta">
+          <span>赵财务</span>
+          <span>V1.0</span>
+        </div>
+        <div class="list-item-tags">
+          <span class="tag bg-red" style="color:white;">风险提醒</span>
+          <span class="tag bg-blue" style="color:white;">餐饮业</span>
+        </div>
+      </div>
+      <div class="list-item">
+        <div class="list-item-header">
+          <div class="list-item-title">门店零售代账常见问题</div>
+          <span class="badge bg-amber" style="margin-left:8px;">待审核</span>
+        </div>
+        <div class="list-item-meta">
+          <span>赵财务</span>
+          <span>V1.0</span>
+        </div>
+        <div class="list-item-tags">
+          <span class="tag bg-amber" style="color:white;">常见问题</span>
+          <span class="tag bg-indigo" style="color:white;">门店零售</span>
+        </div>
+      </div>
+      <div class="action-bar" style="position:sticky;bottom:0;background:#F3F4F6;">
+        <button class="btn btn-primary">+ 创建知识卡</button>
+      </div>
+    </div>
+
+    <!-- ==================== SCREEN: Knowledge Detail ==================== -->
+    <div class="screen" id="screen-knowledge-detail">
+      <div class="detail-header">
+        <button class="back-btn" onclick="navigateTo('knowledge')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <h2>知识卡详情</h2>
+        <span class="badge bg-emerald">已发布</span>
+      </div>
+      <div class="detail-section">
+        <div class="detail-section-title">基本信息</div>
+        <div class="detail-row">
+          <span class="detail-row-label">分类</span>
+          <span class="detail-row-value">资料清单</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-row-label">适用客户</span>
+          <span class="detail-row-value">餐饮业</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-row-label">版本</span>
+          <span class="detail-row-value">V1.0</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-row-label">创建人</span>
+          <span class="detail-row-value">赵财务</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-row-label">可见范围</span>
+          <span class="detail-row-value">全部门</span>
+        </div>
+      </div>
+      <div class="detail-section">
+        <div class="detail-section-title">知识内容</div>
+        <div class="detail-content">
+          <p><strong>📋 餐饮门店代账所需资料清单</strong></p>
+          <p>1. 营业执照副本复印件</p>
+          <p>2. 法人身份证复印件</p>
+          <p>3. 银行开户许可证</p>
+          <p>4. 上月银行流水对账单</p>
+          <p>5. 进销存台账（如有）</p>
+          <p>6. 发票领购簿及开票汇总表</p>
+          <p>7. 员工花名册及社保缴纳凭证</p>
+          <p><strong>⚠️ 风险提示：</strong></p>
+          <p>餐饮业需特别注意食材采购发票的合规性，避免白条入账。</p>
+        </div>
+      </div>
+      <div class="action-bar">
+        <button class="btn btn-secondary">编辑</button>
+        <button class="btn btn-primary">分享</button>
+      </div>
+    </div>
+
+    <!-- ==================== SCREEN: Experience ==================== -->
+    <div class="screen" id="screen-experience">
+      <div class="detail-header">
+        <button class="back-btn" onclick="navigateTo('dashboard')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <h2>经验调用</h2>
+        <div class="avatar bg-blue" style="width:36px;height:36px;font-size:14px;">张</div>
+      </div>
+      <div style="flex:1;overflow-y:auto;padding-bottom:80px;">
+        <div class="chat-container">
+          <div class="chat-bubble user">
+            餐饮客户初次咨询，问代账服务包含哪些内容？怎么报价比较合适？
+          </div>
+          <div class="chat-bubble ai">
+            <div class="section-label">📜 政策解释</div>
+            <p style="font-size:13px;">根据最新个体工商户税收政策，餐饮业小规模纳税人可享受增值税减免优惠，月销售额 15 万以下免征增值税。</p>
+
+            <div class="section-label">🎯 服务机会</div>
+            <p style="font-size:13px;">建议推荐「餐饮专属代账套餐」，包含：月度记账、纳税申报、发票管理、年度汇算清缴。可额外推荐工商年报服务。</p>
+
+            <div class="section-label">💬 销售话术</div>
+            <p style="font-size:13px;">"您好，我们针对餐饮行业有专门的代账方案，每月仅需 ¥XXX，包含记账报税全流程，还会定期提供税务风险提醒…"。</p>
+
+            <div class="section-label">⚠️ 风险提醒</div>
+            <p style="font-size:13px;">餐饮业食材采购多为现金交易，需提醒客户保留采购凭证，避免税务稽查风险。</p>
+          </div>
+          <div style="padding:8px 0;">
+            <p style="font-size:11px;color:#9CA3AF;text-align:center;">📎 引用来源：餐饮门店代账所需资料清单 · 餐饮门店常见税务风险</p>
+          </div>
+        </div>
+      </div>
+      <div class="chat-input-bar" style="position:absolute;bottom:0;left:0;right:0;">
+        <input class="chat-input" placeholder="输入您的问题..." readonly>
+        <button class="chat-send">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- ==================== SCREEN: SOP Training ==================== -->
+    <div class="screen" id="screen-sop">
+      <div class="detail-header">
+        <button class="back-btn" onclick="navigateTo('dashboard')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <h2>SOP 训练</h2>
+        <div class="avatar bg-blue" style="width:36px;height:36px;font-size:14px;">张</div>
+      </div>
+      <div class="filter-bar">
+        <button class="filter-chip active">全部</button>
+        <button class="filter-chip">进行中</button>
+        <button class="filter-chip">待审核</button>
+        <button class="filter-chip">已完成</button>
+      </div>
+      <div class="list-item" onclick="navigateTo('sop-detail')">
+        <div class="list-item-header">
+          <div class="list-item-title">新客户首次拜访 SOP</div>
+          <span class="badge bg-amber" style="margin-left:8px;">进行中</span>
+        </div>
+        <div class="list-item-meta">
+          <span>导师：陈导师</span>
+          <span>截止：06-15</span>
+        </div>
+        <div style="margin-top:10px;">
+          <div style="display:flex;justify-content:space-between;font-size:11px;font-weight:600;color:#6B7280;margin-bottom:4px;">
+            <span>完成进度</span>
+            <span>60%</span>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill bg-amber" style="width:60%;"></div>
+          </div>
+        </div>
+      </div>
+      <div class="list-item">
+        <div class="list-item-header">
+          <div class="list-item-title">客户签约流程 SOP</div>
+          <span class="badge bg-emerald" style="margin-left:8px;">已完成</span>
+        </div>
+        <div class="list-item-meta">
+          <span>导师：陈导师</span>
+          <span>完成：06-08</span>
+        </div>
+        <div style="margin-top:10px;">
+          <div style="display:flex;justify-content:space-between;font-size:11px;font-weight:600;color:#6B7280;margin-bottom:4px;">
+            <span>完成进度</span>
+            <span>100%</span>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill bg-emerald" style="width:100%;"></div>
+          </div>
+        </div>
+      </div>
+      <div class="action-bar" style="position:sticky;bottom:0;background:#F3F4F6;">
+        <button class="btn btn-primary">+ 创建训练任务</button>
+      </div>
+    </div>
+
+    <!-- ==================== SCREEN: SOP Detail ==================== -->
+    <div class="screen" id="screen-sop-detail">
+      <div class="detail-header">
+        <button class="back-btn" onclick="navigateTo('sop')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <h2>任务详情</h2>
+        <span class="badge bg-amber">进行中</span>
+      </div>
+      <div class="detail-section">
+        <div class="detail-section-title">任务信息</div>
+        <div class="detail-row">
+          <span class="detail-row-label">任务标题</span>
+          <span class="detail-row-value">新客户首次拜访 SOP</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-row-label">导师</span>
+          <span class="detail-row-value">陈导师</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-row-label">截止日期</span>
+          <span class="detail-row-value">2026-06-15</span>
+        </div>
+      </div>
+      <div class="detail-section">
+        <div class="detail-section-title">检查报告</div>
+        <div style="display:flex;gap:16px;justify-content:center;margin-bottom:16px;">
+          <div class="score-circle bg-emerald">
+            <span class="score-value">85</span>
+            <span class="score-label">完整性</span>
+          </div>
+          <div class="score-circle bg-blue">
+            <span class="score-value">78</span>
+            <span class="score-label">可执行性</span>
+          </div>
+        </div>
+        <div style="background:#FEF3C7;border-radius:6px;padding:12px;margin-top:8px;">
+          <p style="font-size:12px;font-weight:700;color:#92400E;margin-bottom:4px;">⚠️ 遗漏步骤</p>
+          <p style="font-size:12px;color:#78350F;line-height:1.5;">未包含客户背景调研环节，建议补充行业信息和竞品分析步骤。</p>
+        </div>
+        <div style="background:#FEE2E2;border-radius:6px;padding:12px;margin-top:8px;">
+          <p style="font-size:12px;font-weight:700;color:#991B1B;margin-bottom:4px;">🔴 风险点</p>
+          <p style="font-size:12px;color:#7F1D1D;line-height:1.5;">首次拜访未提及报价策略，可能导致客户流失。</p>
+        </div>
+      </div>
+      <div class="action-bar">
+        <button class="btn btn-secondary">返回修改</button>
+        <button class="btn btn-primary">提交审核</button>
+      </div>
+    </div>
+
+    <!-- ==================== SCREEN: Audit Logs ==================== -->
+    <div class="screen" id="screen-audit">
+      <div class="detail-header">
+        <button class="back-btn" onclick="navigateTo('dashboard')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <h2>审计日志</h2>
+        <div class="avatar bg-red" style="width:36px;height:36px;font-size:14px;">周</div>
+      </div>
+      <div class="filter-bar">
+        <button class="filter-chip active">全部</button>
+        <button class="filter-chip">创建</button>
+        <button class="filter-chip">审核</button>
+        <button class="filter-chip">发布</button>
+      </div>
+      <div class="activity-list">
+        <div class="activity-item">
+          <span class="activity-time">10:30</span>
+          <div class="activity-content">
+            <p><span class="user">王运营</span> <span class="action">创建政策简报</span></p>
+            <p class="target">entity: policy_brief · 个体工商户发展政策简报</p>
+          </div>
+          <span class="badge bg-blue">create</span>
+        </div>
+        <div class="activity-item">
+          <span class="activity-time">09:15</span>
+          <div class="activity-content">
+            <p><span class="user">赵财务</span> <span class="action">发布知识卡</span></p>
+            <p class="target">entity: knowledge_card · 餐饮门店代账所需资料清单</p>
+          </div>
+          <span class="badge bg-emerald">publish</span>
+        </div>
+        <div class="activity-item">
+          <span class="activity-time">09:00</span>
+          <div class="activity-content">
+            <p><span class="user">赵财务</span> <span class="action">发布知识卡</span></p>
+            <p class="target">entity: knowledge_card · 餐饮门店常见税务风险</p>
+          </div>
+          <span class="badge bg-emerald">publish</span>
+        </div>
+        <div class="activity-item">
+          <span class="activity-time">08:45</span>
+          <div class="activity-content">
+            <p><span class="user">周管理员</span> <span class="action">审核通过</span></p>
+            <p class="target">entity: knowledge_card · 餐饮门店代账所需资料清单</p>
+          </div>
+          <span class="badge bg-purple">review</span>
+        </div>
+        <div class="activity-item">
+          <span class="activity-time">08:30</span>
+          <div class="activity-content">
+            <p><span class="user">张销售</span> <span class="action">经验调用</span></p>
+            <p class="target">entity: experience_query · 餐饮客户初次咨询</p>
+          </div>
+          <span class="badge" style="background:#6366F1;color:white;">query</span>
+        </div>
+        <div class="activity-item">
+          <span class="activity-time">08:00</span>
+          <div class="activity-content">
+            <p><span class="user">周管理员</span> <span class="action">创建用户</span></p>
+            <p class="target">entity: user · 刘新人</p>
+          </div>
+          <span class="badge bg-blue">create</span>
+        </div>
+      </div>
+      <div style="height:20px;"></div>
+    </div>
+
+    <!-- ==================== SCREEN: Push Records ==================== -->
+    <div class="screen" id="screen-push">
+      <div class="detail-header">
+        <button class="back-btn" onclick="navigateTo('dashboard')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <h2>推送记录</h2>
+        <div class="avatar bg-blue" style="width:36px;height:36px;font-size:14px;">张</div>
+      </div>
+      <div class="filter-bar">
+        <button class="filter-chip active">全部</button>
+        <button class="filter-chip">已发送</button>
+        <button class="filter-chip">已读</button>
+        <button class="filter-chip">失败</button>
+      </div>
+      <div class="list-item">
+        <div class="list-item-header">
+          <div class="list-item-title">个体工商户发展政策简报</div>
+          <span class="badge bg-emerald" style="margin-left:8px;">已读</span>
+        </div>
+        <div class="list-item-meta">
+          <span>渠道：企微</span>
+          <span>今天 10:35</span>
+        </div>
+        <div style="margin-top:8px;">
+          <div class="detail-row" style="padding:6px 0;border:none;">
+            <span class="detail-row-label">推送目标</span>
+            <span class="detail-row-value">销售部 · 全部成员</span>
+          </div>
+          <div class="detail-row" style="padding:6px 0;border:none;">
+            <span class="detail-row-label">推送人</span>
+            <span class="detail-row-value">王运营</span>
+          </div>
+        </div>
+      </div>
+      <div style="height:20px;"></div>
+    </div>
+
+    <!-- ==================== Bottom Tab Bar ==================== -->
+    <div class="tab-bar">
+      <button class="tab-item active" onclick="navigateTo('dashboard')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        <span>首页</span>
+      </button>
+      <button class="tab-item" onclick="navigateTo('policy')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+        <span>政策</span>
+      </button>
+      <button class="tab-item" onclick="navigateTo('knowledge')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+        <span>知识库</span>
+      </button>
+      <button class="tab-item" onclick="navigateTo('experience')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        <span>问答</span>
+      </button>
+      <button class="tab-item" onclick="navigateTo('sop')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+        <span>训练</span>
+      </button>
+    </div>
+  </div>
+
+  <script>
+    // ==================== Navigation ====================
+    function navigateTo(screen) {
+      // Hide all screens
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+      // Show target screen
+      const target = document.getElementById('screen-' + screen);
+      if (target) {
+        target.classList.add('active');
+        target.scrollTop = 0;
+      }
+      // Update tab bar
+      const tabMap = {
+        'dashboard': 0,
+        'policy': 1,
+        'policy-detail': 1,
+        'briefs': 1,
+        'knowledge': 2,
+        'knowledge-detail': 2,
+        'experience': 3,
+        'sop': 4,
+        'sop-detail': 4,
+        'audit': 0,
+        'push': 1
+      };
+      document.querySelectorAll('.tab-item').forEach((tab, i) => {
+        tab.classList.toggle('active', i === tabMap[screen]);
+      });
+      // Close menu
+      closeMenu();
+      // Close user dropdown
+      document.getElementById('userDropdown').classList.remove('show');
+    }
+
+    // ==================== Side Menu ====================
+    function toggleMenu() {
+      const menu = document.getElementById('sideMenu');
+      const overlay = document.getElementById('menuOverlay');
+      menu.classList.toggle('show');
+      overlay.classList.toggle('show');
+    }
+    function closeMenu() {
+      document.getElementById('sideMenu').classList.remove('show');
+      document.getElementById('menuOverlay').classList.remove('show');
+    }
+
+    // ==================== User Switcher ====================
+    function toggleUserDropdown() {
+      document.getElementById('userDropdown').classList.toggle('show');
+    }
+    function switchUser(name, role, dept, colorClass) {
+      const avatar = document.getElementById('mainAvatar');
+      avatar.textContent = name.charAt(0);
+      avatar.className = 'avatar ' + colorClass;
+      document.getElementById('userDropdown').classList.remove('show');
+      // Update subtitle
+      const subtitle = document.querySelector('#screen-dashboard .subtitle');
+      if (subtitle) subtitle.textContent = '欢迎回来，' + name;
+    }
+
+    // ==================== Filter Chips ====================
+    document.querySelectorAll('.filter-bar').forEach(bar => {
+      bar.querySelectorAll('.filter-chip').forEach(chip => {
+        chip.addEventListener('click', () => {
+          bar.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+          chip.classList.add('active');
+        });
+      });
+    });
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('#mainAvatar') && !e.target.closest('#userDropdown')) {
+        document.getElementById('userDropdown').classList.remove('show');
+      }
+    });
+  </script>
+</body>
+</html>
