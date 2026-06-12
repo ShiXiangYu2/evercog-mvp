@@ -1,9 +1,18 @@
 import { PrismaClient } from '@prisma/client'
+import bcrypt from 'bcryptjs'
 
 const prisma = new PrismaClient()
 
+// 默认密码（演示用）
+const DEFAULT_PASSWORD = 'password123'
+const BCRYPT_ROUNDS = 12
+
 async function main() {
   console.log('🌱 开始填充演示数据...')
+
+  // 预哈希默认密码
+  const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, BCRYPT_ROUNDS)
+  console.log(`🔑 默认密码已哈希: ${DEFAULT_PASSWORD}`)
 
   // 清空现有数据（按依赖顺序）
   await prisma.qualityMetrics.deleteMany()
@@ -37,16 +46,16 @@ async function main() {
   // ==================== 用户 ====================
   console.log('👥 创建用户...')
   const users = await Promise.all([
-    prisma.user.create({ data: { name: '张销售', departmentId: salesDept.id, role: 'sales' } }),
-    prisma.user.create({ data: { name: '李客服', departmentId: serviceDept.id, role: 'customer_service' } }),
-    prisma.user.create({ data: { name: '王运营', departmentId: opsDept.id, role: 'operations' } }),
-    prisma.user.create({ data: { name: '赵财务', departmentId: financeDept.id, role: 'finance' } }),
-    prisma.user.create({ data: { name: '陈导师', departmentId: financeDept.id, role: 'mentor' } }),
-    prisma.user.create({ data: { name: '刘新人', departmentId: salesDept.id, role: 'trainee' } }),
-    prisma.user.create({ data: { name: '周管理员', departmentId: adminDept.id, role: 'admin' } }),
-    prisma.user.create({ data: { name: '吴 AI 工程师', departmentId: aiDept.id, role: 'ai_info' } }),
-    prisma.user.create({ data: { name: '孙销售', departmentId: salesDept.id, role: 'sales' } }),
-    prisma.user.create({ data: { name: '郑运营', departmentId: opsDept.id, role: 'operations' } }),
+    prisma.user.create({ data: { name: '张销售', departmentId: salesDept.id, role: 'sales', passwordHash } }),
+    prisma.user.create({ data: { name: '李客服', departmentId: serviceDept.id, role: 'customer_service', passwordHash } }),
+    prisma.user.create({ data: { name: '王运营', departmentId: opsDept.id, role: 'operations', passwordHash } }),
+    prisma.user.create({ data: { name: '赵财务', departmentId: financeDept.id, role: 'finance', passwordHash } }),
+    prisma.user.create({ data: { name: '陈导师', departmentId: financeDept.id, role: 'mentor', passwordHash } }),
+    prisma.user.create({ data: { name: '刘新人', departmentId: salesDept.id, role: 'trainee', passwordHash } }),
+    prisma.user.create({ data: { name: '周管理员', departmentId: adminDept.id, role: 'admin', passwordHash } }),
+    prisma.user.create({ data: { name: '吴 AI 工程师', departmentId: aiDept.id, role: 'ai_info', passwordHash } }),
+    prisma.user.create({ data: { name: '孙销售', departmentId: salesDept.id, role: 'sales', passwordHash } }),
+    prisma.user.create({ data: { name: '郑运营', departmentId: opsDept.id, role: 'operations', passwordHash } }),
   ])
 
   const [zhangSales, liService, wangOps, zhaoFinance, chenMentor, liuTrainee, zhouAdmin, wuAI, sunSales, zhengOps] = users

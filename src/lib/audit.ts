@@ -4,7 +4,7 @@ import { prisma } from './prisma'
 
 export type AuditAction = 'create' | 'edit' | 'review' | 'publish' | 'reject' | 'query' | 'generate' | 'push' | 'approve' | 'submit'
 
-export type EntityType = 'policy_link' | 'policy_brief' | 'knowledge_card' | 'experience_query' | 'sop_task' | 'sop_submission'
+export type EntityType = 'policy_link' | 'policy_brief' | 'knowledge_card' | 'experience_query' | 'sop_task' | 'sop_submission' | 'agent_task' | 'push_record'
 
 export interface AuditLogParams {
   userId: string

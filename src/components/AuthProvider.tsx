@@ -1,8 +1,10 @@
 /**
- * AuthProvider - 客户端认证状态管理
+ * AuthProvider - 客户端认证状态管理（改进版）
  *
- * 检查用户是否已登录，未登录时重定向到登录页。
- * 已登录时将用户信息注入上下文。
+ * 改进点：
+ * 1. 登出后正确清理状态
+ * 2. 避免页面消失问题
+ * 3. 增加错误处理
  */
 'use client'
 
@@ -16,12 +18,14 @@ interface AuthContextType {
   user: CurrentUser | null
   loading: boolean
   refresh: () => Promise<CurrentUser | null>
+  clearUser: () => void
 }
 
 const AuthContext = createContext<AuthContextType>({
   user: null,
   loading: true,
   refresh: async () => null,
+  clearUser: () => {},
 })
 
 export function useAuth() {
@@ -43,6 +47,7 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname()
   const [user, setUser] = useState<CurrentUser | null>(null)
   const [loading, setLoading] = useState(true)
+  const [isRedirecting, setIsRedirecting] = useState(false)
 
   const checkAuth = async () => {
     try {
@@ -57,21 +62,26 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  useEffect(() => {
-    checkAuth()
-  }, [])  
+  const clearUser = () => {
+    setUser(null)
+  }
 
   useEffect(() => {
-    if (loading) return
+    checkAuth()
+  }, [])
+
+  useEffect(() => {
+    if (loading || isRedirecting) return
 
     // 公开页面不需要登录
     if (isPublicPath(pathname)) return
 
     // 未登录 → 重定向到登录页
     if (!user) {
+      setIsRedirecting(true)
       router.push('/login')
     }
-  }, [user, loading, pathname, router])
+  }, [user, loading, pathname, router, isRedirecting])
 
   // 登录页面不需要认证检查
   if (isPublicPath(pathname)) {
@@ -90,13 +100,20 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
     )
   }
 
-  // 未登录（正在重定向）
+  // 未登录（正在重定向）- 显示 loading 而不是返回 null
   if (!user) {
-    return null
+    return (
+      <div className="min-h-screen bg-[#F3F4F6] flex items-center justify-center">
+        <div className="flex items-center gap-3">
+          <div className="w-6 h-6 border-2 border-[#10B981] border-t-transparent rounded-full animate-spin" />
+          <span className="text-sm text-gray-500">跳转到登录页...</span>
+        </div>
+      </div>
+    )
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading, refresh: checkAuth }}>
+    <AuthContext.Provider value={{ user, loading, refresh: checkAuth, clearUser }}>
       {children}
     </AuthContext.Provider>
   )

@@ -1,12 +1,17 @@
+/**
+ * PolicyLink API 路由 - 单个实体操作
+ *
+ * 迁移到使用 Service 层
+ */
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
-import { createAuditLog } from '@/lib/audit'
-import { withAuth, isAdmin } from '@/lib/auth'
+import { withAuth } from '@/lib/auth'
+import { getPolicyLinkService } from '@/lib/services/policy-link'
+import { handleServiceError } from '@/lib/service-error'
 
-// GET /api/policy-links/[id] - Get policy link detail
+// GET /api/policy-links/[id] - 获取单个政策链接
 export const GET = withAuth(async (
   request: NextRequest,
-  { params }
+  { user, params }
 ) => {
   try {
     const id = params?.id
@@ -14,40 +19,16 @@ export const GET = withAuth(async (
       return NextResponse.json({ error: 'Missing policy link ID' }, { status: 400 })
     }
 
-    const policyLink = await prisma.policyLink.findUnique({
-      where: { id },
-      include: {
-        submitter: {
-          select: { id: true, name: true, role: true },
-        },
-        brief: {
-          include: {
-            generator: {
-              select: { id: true, name: true, role: true },
-            },
-          },
-        },
-      },
-    })
+    const service = getPolicyLinkService()
+    const link = await service.getById(id, user)
 
-    if (!policyLink) {
-      return NextResponse.json(
-        { error: 'Policy link not found' },
-        { status: 404 }
-      )
-    }
-
-    return NextResponse.json(policyLink)
+    return NextResponse.json(link)
   } catch (error) {
-    console.error('Failed to fetch policy link:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch policy link' },
-      { status: 500 }
-    )
+    return handleServiceError(error)
   }
 })
 
-// PATCH /api/policy-links/[id] - Update policy link status
+// PATCH /api/policy-links/[id] - 更新政策链接
 export const PATCH = withAuth(async (
   request: NextRequest,
   { user, params }
@@ -59,56 +40,35 @@ export const PATCH = withAuth(async (
     }
 
     const body = await request.json()
-    const { status, title, source, customerType, departmentId } = body
 
-    const existing = await prisma.policyLink.findUnique({ where: { id } })
-    if (!existing) {
-      return NextResponse.json(
-        { error: 'Policy link not found' },
-        { status: 404 }
-      )
-    }
+    const service = getPolicyLinkService()
+    const link = await service.update(id, body, user)
 
-    // 权限检查：仅管理员或提交者可修改
-    if (!isAdmin(user) && existing.submitterId !== user.id) {
-      return NextResponse.json(
-        { error: 'Only the submitter or admin can update this policy link' },
-        { status: 403 }
-      )
-    }
-
-    const updateData: Record<string, unknown> = {}
-    if (status) updateData.status = status
-    if (title !== undefined) updateData.title = title
-    if (source !== undefined) updateData.source = source
-    if (customerType !== undefined) updateData.customerType = customerType
-    if (departmentId !== undefined) updateData.departmentId = departmentId
-
-    const policyLink = await prisma.policyLink.update({
-      where: { id },
-      data: updateData,
-      include: {
-        submitter: {
-          select: { id: true, name: true, role: true },
-        },
-        brief: true,
-      },
-    })
-
-    await createAuditLog({
-      userId: user.id,
-      action: 'edit',
-      entityType: 'policy_link',
-      entityId: id,
-      details: { updatedFields: Object.keys(updateData) },
-    })
-
-    return NextResponse.json(policyLink)
+    return NextResponse.json(link)
   } catch (error) {
-    console.error('Failed to update policy link:', error)
-    return NextResponse.json(
-      { error: 'Failed to update policy link' },
-      { status: 500 }
-    )
+    return handleServiceError(error)
   }
 })
+
+// DELETE /api/policy-links/[id] - 删除政策链接
+export const DELETE = withAuth(
+  async (
+    request: NextRequest,
+    { user, params }
+  ) => {
+    try {
+      const id = params?.id
+      if (!id) {
+        return NextResponse.json({ error: 'Missing policy link ID' }, { status: 400 })
+      }
+
+      const service = getPolicyLinkService()
+      await service.delete(id, user)
+
+      return NextResponse.json({ message: 'Policy link deleted successfully' })
+    } catch (error) {
+      return handleServiceError(error)
+    }
+  },
+  { requiredRoles: ['admin'] }
+)

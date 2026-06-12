@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { LogIn, User } from 'lucide-react'
+import { LogIn, User, Lock, Eye, EyeOff } from 'lucide-react'
 import BrandLogo from '@/components/BrandLogo'
 
 interface UserOption {
@@ -38,6 +38,9 @@ export default function LoginPage() {
   const router = useRouter()
   const [users, setUsers] = useState<UserOption[]>([])
   const [selectedId, setSelectedId] = useState<string>('')
+  const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
+  const [usePassword, setUsePassword] = useState(false)
   const [loading, setLoading] = useState(true)
   const [logging, setLogging] = useState(false)
   const [error, setError] = useState('')
@@ -61,23 +64,34 @@ export default function LoginPage() {
       return
     }
 
+    if (usePassword && !password) {
+      setError('请输入密码')
+      return
+    }
+
     setLogging(true)
     setError('')
 
     try {
+      const body: Record<string, string> = { userId: selectedId }
+      if (usePassword) {
+        body.password = password
+      }
+
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: selectedId }),
-        credentials: 'same-origin', // 确保 cookie 被发送和接收
+        body: JSON.stringify(body),
+        credentials: 'same-origin',
       })
 
+      const data = await res.json()
+
       if (!res.ok) {
-        const data = await res.json()
         throw new Error(data.error || '登录失败')
       }
 
-      // 登录成功，跳转到首页（完整页面重载确保 cookie 生效）
+      // 登录成功，跳转到首页
       window.location.href = '/'
     } catch (err) {
       setError(err instanceof Error ? err.message : '登录失败')
@@ -86,7 +100,11 @@ export default function LoginPage() {
     }
   }
 
-  const selectedUser = users.find((u) => u.id === selectedId)
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && selectedId) {
+      handleLogin()
+    }
+  }
 
   return (
     <div className="min-h-screen bg-[#F3F4F6] flex items-center justify-center p-4">
@@ -112,7 +130,7 @@ export default function LoginPage() {
           ) : (
             <>
               {/* 用户选择 */}
-              <div className="space-y-2 mb-6">
+              <div className="space-y-2 mb-4">
                 {users.map((user) => (
                   <button
                     key={user.id}
@@ -152,6 +170,57 @@ export default function LoginPage() {
                 ))}
               </div>
 
+              {/* 密码模式切换 */}
+              <div className="mb-4">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={usePassword}
+                    onChange={(e) => {
+                      setUsePassword(e.target.checked)
+                      setPassword('')
+                      setError('')
+                    }}
+                    className="w-4 h-4 rounded border-gray-300 text-[#10B981] focus:ring-[#10B981]"
+                  />
+                  <span className="text-sm text-gray-600">使用密码登录</span>
+                </label>
+              </div>
+
+              {/* 密码输入框 */}
+              {usePassword && (
+                <div className="mb-4">
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      value={password}
+                      onChange={(e) => {
+                        setPassword(e.target.value)
+                        setError('')
+                      }}
+                      onKeyPress={handleKeyPress}
+                      placeholder="输入密码"
+                      className="w-full pl-10 pr-10 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-[#10B981] focus:ring-1 focus:ring-[#10B981]"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    >
+                      {showPassword ? (
+                        <EyeOff className="w-5 h-5" />
+                      ) : (
+                        <Eye className="w-5 h-5" />
+                      )}
+                    </button>
+                  </div>
+                  <p className="text-xs text-gray-400 mt-1">
+                    默认密码: password123
+                  </p>
+                </div>
+              )}
+
               {/* 错误提示 */}
               {error && (
                 <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
@@ -186,7 +255,7 @@ export default function LoginPage() {
 
           {/* 提示 */}
           <p className="text-xs text-gray-400 text-center mt-4">
-            MVP 演示模式：选择任意用户即可登录
+            MVP 演示模式：选择任意用户即可登录（可选密码验证）
           </p>
         </div>
       </div>

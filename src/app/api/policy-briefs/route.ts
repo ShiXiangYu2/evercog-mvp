@@ -1,55 +1,32 @@
+/**
+ * PolicyBrief API 路由
+ *
+ * 迁移到使用 Service 层
+ */
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
 import { withAuth } from '@/lib/auth'
+import { getPolicyBriefService } from '@/lib/services/policy-brief'
+import { handleServiceError } from '@/lib/service-error'
 
-// GET /api/policy-briefs - List all policy briefs
-export const GET = withAuth(async (request: NextRequest) => {
+// GET /api/policy-briefs - 列表查询
+export const GET = withAuth(async (request: NextRequest, { user }) => {
   try {
     const { searchParams } = new URL(request.url)
-    const page = parseInt(searchParams.get('page') || '1')
-    const pageSize = parseInt(searchParams.get('pageSize') || '20')
-    const reviewStatus = searchParams.get('reviewStatus') || undefined
-    const search = searchParams.get('search') || undefined
 
-    const where: Record<string, unknown> = {}
-    if (reviewStatus) where.reviewStatus = reviewStatus
-    if (search) {
-      where.OR = [
-        { title: { contains: search } },
-        { summary: { contains: search } },
-      ]
-    }
-
-    const [items, total] = await Promise.all([
-      prisma.policyBrief.findMany({
-        where,
-        include: {
-          generator: {
-            select: { id: true, name: true, role: true },
-          },
-          policyLink: {
-            select: { id: true, title: true, url: true, source: true, customerType: true },
-          },
-        },
-        orderBy: { createdAt: 'desc' },
-        skip: (page - 1) * pageSize,
-        take: pageSize,
-      }),
-      prisma.policyBrief.count({ where }),
-    ])
-
-    return NextResponse.json({
-      items,
-      total,
-      page,
-      pageSize,
-      totalPages: Math.ceil(total / pageSize),
-    })
-  } catch (error) {
-    console.error('Failed to fetch policy briefs:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch policy briefs' },
-      { status: 500 }
+    const service = getPolicyBriefService()
+    const result = await service.list(
+      {
+        search: searchParams.get('search') || undefined,
+        reviewStatus: searchParams.get('reviewStatus') || undefined,
+        generatorId: searchParams.get('generatorId') || undefined,
+        page: parseInt(searchParams.get('page') || '1'),
+        pageSize: parseInt(searchParams.get('pageSize') || '20'),
+      },
+      user
     )
+
+    return NextResponse.json(result)
+  } catch (error) {
+    return handleServiceError(error)
   }
 })

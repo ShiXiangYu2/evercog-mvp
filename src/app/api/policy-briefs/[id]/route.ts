@@ -1,12 +1,17 @@
+/**
+ * PolicyBrief API 路由 - 单个实体操作
+ *
+ * 迁移到使用 Service 层
+ */
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
-import { createAuditLog } from '@/lib/audit'
-import { withAuth, canReview } from '@/lib/auth'
+import { withAuth } from '@/lib/auth'
+import { getPolicyBriefService } from '@/lib/services/policy-brief'
+import { handleServiceError } from '@/lib/service-error'
 
-// GET /api/policy-briefs/[id] - Get policy brief detail
+// GET /api/policy-briefs/[id] - 获取单个政策简报
 export const GET = withAuth(async (
   request: NextRequest,
-  { params }
+  { user, params }
 ) => {
   try {
     const id = params?.id
@@ -14,40 +19,16 @@ export const GET = withAuth(async (
       return NextResponse.json({ error: 'Missing brief ID' }, { status: 400 })
     }
 
-    const brief = await prisma.policyBrief.findUnique({
-      where: { id },
-      include: {
-        generator: {
-          select: { id: true, name: true, role: true },
-        },
-        policyLink: {
-          include: {
-            submitter: {
-              select: { id: true, name: true, role: true },
-            },
-          },
-        },
-      },
-    })
-
-    if (!brief) {
-      return NextResponse.json(
-        { error: 'Policy brief not found' },
-        { status: 404 }
-      )
-    }
+    const service = getPolicyBriefService()
+    const brief = await service.getById(id, user)
 
     return NextResponse.json(brief)
   } catch (error) {
-    console.error('Failed to fetch policy brief:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch policy brief' },
-      { status: 500 }
-    )
+    return handleServiceError(error)
   }
 })
 
-// PATCH /api/policy-briefs/[id] - Update policy brief (edit content or review status)
+// PATCH /api/policy-briefs/[id] - 更新政策简报
 export const PATCH = withAuth(async (
   request: NextRequest,
   { user, params }
@@ -59,79 +40,34 @@ export const PATCH = withAuth(async (
     }
 
     const body = await request.json()
+    const service = getPolicyBriefService()
 
-    const existing = await prisma.policyBrief.findUnique({ where: { id } })
-    if (!existing) {
-      return NextResponse.json(
-        { error: 'Policy brief not found' },
-        { status: 404 }
-      )
+    // 根据请求体中的 action 决定操作
+    if (body.action === 'submit') {
+      const brief = await service.submitForReview(id, user)
+      return NextResponse.json(brief)
     }
 
-    // 权限检查：修改审核状态需要审核权限
-    if (body.reviewStatus && body.reviewStatus !== existing.reviewStatus) {
-      if (!canReview(user, 'policy_brief')) {
+    if (body.action === 'approve') {
+      const brief = await service.approve(id, user)
+      return NextResponse.json(brief)
+    }
+
+    if (body.action === 'reject') {
+      if (!body.comment) {
         return NextResponse.json(
-          { error: 'You do not have permission to review policy briefs' },
-          { status: 403 }
+          { error: '驳回时必须提供原因' },
+          { status: 400 }
         )
       }
+      const brief = await service.reject(id, user, body.comment)
+      return NextResponse.json(brief)
     }
 
-    const updateData: Record<string, unknown> = {}
-    const editableFields = [
-      'title', 'summary', 'applicableTo', 'keyClauses',
-      'actionSuggestions', 'riskReminders', 'reviewStatus',
-    ]
-
-    for (const field of editableFields) {
-      if (body[field] !== undefined) {
-        updateData[field] = body[field]
-      }
-    }
-
-    if (body.reviewStatus === 'reviewed') {
-      updateData.reviewedAt = new Date()
-    }
-
-    const brief = await prisma.policyBrief.update({
-      where: { id },
-      data: updateData,
-      include: {
-        generator: {
-          select: { id: true, name: true, role: true },
-        },
-        policyLink: {
-          select: { id: true, title: true, url: true, source: true },
-        },
-      },
-    })
-
-    // If brief is reviewed, update the policy link status
-    if (body.reviewStatus === 'reviewed') {
-      await prisma.policyLink.update({
-        where: { id: existing.policyLinkId },
-        data: { status: 'reviewed' },
-      })
-    }
-
-    await createAuditLog({
-      userId: user.id,
-      action: body.reviewStatus ? 'review' : 'edit',
-      entityType: 'policy_brief',
-      entityId: id,
-      details: {
-        updatedFields: Object.keys(updateData),
-        reviewStatus: body.reviewStatus,
-      },
-    })
-
+    // 默认：更新内容
+    const brief = await service.update(id, body, user)
     return NextResponse.json(brief)
   } catch (error) {
-    console.error('Failed to update policy brief:', error)
-    return NextResponse.json(
-      { error: 'Failed to update policy brief' },
-      { status: 500 }
-    )
+    return handleServiceError(error)
   }
 })

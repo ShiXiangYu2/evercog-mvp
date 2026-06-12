@@ -21,6 +21,7 @@ interface DeepSeekConfig {
   apiKey: string
   baseUrl: string
   model: string
+  timeout: number
 }
 
 function getConfig(): DeepSeekConfig {
@@ -33,6 +34,16 @@ function getConfig(): DeepSeekConfig {
     apiKey,
     baseUrl: process.env.DEEPSEEK_BASE_URL || 'https://api.deepseek.com',
     model: process.env.DEEPSEEK_MODEL || 'deepseek-chat',
+    timeout: parseInt(process.env.LLM_TIMEOUT || '30000', 10),
+  }
+}
+
+// ==================== 超时错误 ====================
+
+export class LLMTimeoutError extends Error {
+  constructor(timeoutMs: number) {
+    super(`LLM request timed out after ${timeoutMs}ms`)
+    this.name = 'LLMTimeoutError'
   }
 }
 
@@ -105,42 +116,62 @@ export class DeepSeekLLMProvider implements LLMProvider {
   name = 'deepseek'
   private client: OpenAI
   private model: string
+  private timeout: number
 
   constructor() {
     const config = getConfig()
     this.client = new OpenAI({
       apiKey: config.apiKey,
       baseURL: config.baseUrl,
+      timeout: config.timeout,
     })
     this.model = config.model
+    this.timeout = config.timeout
   }
 
   /**
-   * 通用补全方法
+   * 通用补全方法（带超时控制）
    */
   private async complete(prompt: string): Promise<string> {
-    const response = await this.client.chat.completions.create({
-      model: this.model,
-      messages: [
-        {
-          role: 'system',
-          content: '你是一个专业的助手，擅长生成结构化的 JSON 输出。请确保输出是有效的 JSON 格式。',
-        },
-        {
-          role: 'user',
-          content: prompt,
-        },
-      ],
-      temperature: 0.7,
-      max_tokens: 2000,
-    })
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), this.timeout)
 
-    const content = response.choices[0]?.message?.content
-    if (!content) {
-      throw new Error('No content returned from DeepSeek API')
+    try {
+      const response = await this.client.chat.completions.create(
+        {
+          model: this.model,
+          messages: [
+            {
+              role: 'system',
+              content: '你是一个专业的助手，擅长生成结构化的 JSON 输出。请确保输出是有效的 JSON 格式。',
+            },
+            {
+              role: 'user',
+              content: prompt,
+            },
+          ],
+          temperature: 0.7,
+          max_tokens: 2000,
+        },
+        {
+          signal: controller.signal,
+        }
+      )
+
+      const content = response.choices[0]?.message?.content
+      if (!content) {
+        throw new Error('No content returned from DeepSeek API')
+      }
+
+      return content.trim()
+    } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') {
+        throw new LLMTimeoutError(this.timeout)
+      }
+      throw error
+    } finally {
+      clearTimeout(timeoutId)
     }
-
-    return content.trim()
   }
 
   /**

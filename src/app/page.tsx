@@ -417,6 +417,42 @@ export default function Home() {
         )}
       </div>
 
+      {/* 热门知识卡 */}
+      <div className="bg-white rounded-xl p-6 border border-gray-100 mb-8">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+            <TrendingUp className="w-5 h-5 text-[#10B981]" />
+            热门知识卡
+          </h2>
+          <Link href="/knowledge-hub" className="text-sm text-[#10B981] font-medium hover:underline">
+            查看全部 →
+          </Link>
+        </div>
+        <div className="grid grid-cols-3 gap-4">
+          <div className="p-4 bg-gray-50 rounded-xl">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-lg">🔥</span>
+              <span className="text-sm font-medium text-gray-700">最多访问</span>
+            </div>
+            <p className="text-sm text-gray-500">查看员工最常访问的知识卡</p>
+          </div>
+          <div className="p-4 bg-gray-50 rounded-xl">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-lg">📊</span>
+              <span className="text-sm font-medium text-gray-700">最多引用</span>
+            </div>
+            <p className="text-sm text-gray-500">查看被引用最多次的知识卡</p>
+          </div>
+          <div className="p-4 bg-gray-50 rounded-xl">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-lg">⭐</span>
+              <span className="text-sm font-medium text-gray-700">最高评分</span>
+            </div>
+            <p className="text-sm text-gray-500">查看评分最高的知识卡</p>
+          </div>
+        </div>
+      </div>
+
       {/* 质量监控指标 */}
       {qualityMetrics.length > 0 && (
         <div className="bg-white rounded-xl p-6 border border-gray-100">

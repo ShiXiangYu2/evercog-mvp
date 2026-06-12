@@ -1,3 +1,11 @@
+/**
+ * Sidebar 组件 - 精致版
+ *
+ * 左下角用户信息与登出区域优化：
+ * - 紧凑的头像 + 用户名布局
+ * - 登出按钮使用图标按钮，节省空间
+ * - 悬浮显示详细信息
+ */
 'use client'
 
 import Link from 'next/link'
@@ -15,6 +23,7 @@ import {
   ChevronRight,
   LogOut,
   User,
+  LogIn,
 } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { useAuth } from '@/components/AuthProvider'
@@ -48,6 +57,8 @@ export default function Sidebar() {
   const router = useRouter()
   const { user } = useAuth()
   const [collapsed, setCollapsed] = useState(false)
+  const [loggingOut, setLoggingOut] = useState(false)
+  const [showUserInfo, setShowUserInfo] = useState(false)
 
   // 同步 CSS 变量，让 main 区域自适应宽度
   useEffect(() => {
@@ -58,9 +69,18 @@ export default function Sidebar() {
   }, [collapsed])
 
   const handleLogout = async () => {
-    await logout()
-    router.push('/login')
-    router.refresh()
+    if (!window.confirm('确定要登出吗？')) {
+      return
+    }
+
+    setLoggingOut(true)
+    try {
+      await logout()
+      window.location.href = '/login'
+    } catch (error) {
+      console.error('Logout failed:', error)
+      setLoggingOut(false)
+    }
   }
 
   return (
@@ -103,59 +123,104 @@ export default function Sidebar() {
         })}
       </nav>
 
-      {/* 当前用户信息 */}
-      {user && !collapsed && (
-        <div className="p-4 border-t border-gray-100">
-          <div className="flex items-center gap-3 p-2">
-            <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
-              <User className="w-4 h-4 text-gray-500" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-gray-900 truncate">{user.name}</p>
-              <p className="text-xs text-gray-500 truncate">
-                {user.departmentName} · {ROLE_LABELS[user.role] || user.role}
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* 底部区域 */}
+      <div className="border-t border-gray-100 p-3 space-y-2">
+        {user ? (
+          <>
+            {/* 用户头像 + 信息（紧凑布局） */}
+            <div className="relative">
+              <div
+                className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
+                onMouseEnter={() => setShowUserInfo(true)}
+                onMouseLeave={() => setShowUserInfo(false)}
+              >
+                {/* 头像 */}
+                <div className="w-8 h-8 bg-gradient-to-br from-[#10B981] to-[#059669] rounded-full flex items-center justify-center flex-shrink-0 shadow-sm">
+                  <span className="text-xs font-bold text-white">
+                    {user.name.charAt(0)}
+                  </span>
+                </div>
 
-      {/* 折叠 + 登出按钮 */}
-      <div className="p-4 border-t border-gray-100 space-y-2">
-        {/* 登出按钮 */}
-        {user && (
-          <button
-            onClick={handleLogout}
-            className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-red-500 hover:bg-red-50 hover:text-red-600 transition-all duration-200"
-            title={collapsed ? '登出' : undefined}
+                {/* 用户名（展开时显示） */}
+                {!collapsed && (
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-900 truncate leading-tight">
+                      {user.name}
+                    </p>
+                    <p className="text-xs text-gray-400 truncate leading-tight">
+                      {ROLE_LABELS[user.role] || user.role}
+                    </p>
+                  </div>
+                )}
+
+                {/* 登出图标按钮 */}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    handleLogout()
+                  }}
+                  disabled={loggingOut}
+                  className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-md transition-colors disabled:opacity-50"
+                  title="登出"
+                >
+                  {loggingOut ? (
+                    <div className="w-3.5 h-3.5 border-2 border-red-500 border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <LogOut className="w-3.5 h-3.5" />
+                  )}
+                </button>
+              </div>
+
+              {/* 悬浮提示卡片（展开时显示） */}
+              {!collapsed && showUserInfo && (
+                <div className="absolute bottom-full left-0 right-0 mb-2 p-3 bg-white rounded-xl border border-gray-200 shadow-lg z-50">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-gradient-to-br from-[#10B981] to-[#059669] rounded-full flex items-center justify-center shadow-sm">
+                      <span className="text-sm font-bold text-white">
+                        {user.name.charAt(0)}
+                      </span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-gray-900">{user.name}</p>
+                      <p className="text-xs text-gray-500">{user.departmentName}</p>
+                      <p className="text-xs text-gray-400">{user.email || '未设置邮箱'}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </>
+        ) : (
+          /* 未登录状态 */
+          <Link
+            href="/login"
+            className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-[#10B981] hover:bg-[#10B981]/10 transition-colors"
           >
-            <LogOut className="w-4 h-4 flex-shrink-0" />
-            {!collapsed && <span>登出</span>}
-          </button>
+            <LogIn className="w-4 h-4" />
+            {!collapsed && <span>登录</span>}
+          </Link>
         )}
 
         {/* 折叠按钮 */}
         <button
           onClick={() => setCollapsed(!collapsed)}
-          className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition-all duration-200"
+          className="w-full flex items-center justify-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
         >
           {collapsed ? (
-            <ChevronRight className="w-5 h-5" />
+            <ChevronRight className="w-4 h-4" />
           ) : (
             <>
-              <ChevronLeft className="w-5 h-5" />
+              <ChevronLeft className="w-4 h-4" />
               <span>收起</span>
             </>
           )}
         </button>
-      </div>
 
-      {/* 版本信息 */}
-      {!collapsed && (
-        <div className="px-6 py-4 border-t border-gray-100">
-          <p className="text-xs text-gray-400 font-medium">v2.0.0 MVP</p>
-        </div>
-      )}
+        {/* 版本号 */}
+        {!collapsed && (
+          <p className="text-center text-[10px] text-gray-300">v2.0.0</p>
+        )}
+      </div>
     </aside>
   )
 }

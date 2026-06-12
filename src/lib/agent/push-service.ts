@@ -6,6 +6,7 @@
  */
 import { prisma } from '../prisma'
 import { createAuditLog } from '../audit'
+import { getWeComClient } from '../wecom/client'
 import logger from '../logger'
 
 // ==================== 类型定义 ====================
@@ -213,10 +214,39 @@ export class PushService {
           // 站内通知：直接标记为已发送（因为是系统内通知）
           success = true
           break
-        case 'wecom':
-          // 企微推送：调用企微 API（V1 仅记录）
-          success = true
+        case 'wecom': {
+          // 企微推送：调用企微 API
+          const wecomClient = getWeComClient()
+          if (wecomClient.isConfigured()) {
+            // 根据目标类型确定推送参数
+            const pushOptions: { toparty?: string; touser?: string } = {}
+            if (target.type === 'department') {
+              // 企微部门 ID 需要映射，这里先用 touser
+              pushOptions.touser = '@all'
+            } else if (target.type === 'user') {
+              pushOptions.touser = target.id
+            }
+
+            const result = await wecomClient.sendPolicyBriefMessage(
+              {
+                title: brief.title,
+                summary: brief.summary,
+                source: '恒识 Evercog',
+              },
+              pushOptions
+            )
+
+            success = result.errcode === 0
+            if (!success) {
+              error = result.errmsg
+            }
+          } else {
+            // 企微未配置，降级到站内通知
+            logger.warn('WeCom not configured, falling back to internal notification')
+            success = true
+          }
           break
+        }
         case 'email':
           // 邮件推送：调用邮件服务（V1 仅记录）
           success = true

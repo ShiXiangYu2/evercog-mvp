@@ -15,41 +15,45 @@ datasource db {
 // 部门
 model Department {
   id          String   @id @default(cuid())
-  name        String   // 部门名称：销售部、客服部、运营部、财务部、AI 信息部
-  description String?  // 部门描述
+  name        String // 部门名称：销售部、客服部、运营部、财务部、AI 信息部
+  description String? // 部门描述
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  users       User[]
+  users User[]
 
   @@map("departments")
 }
 
 // 用户
 model User {
-  id           String   @id @default(cuid())
-  name         String   // 用户姓名
-  email        String?  // 邮箱（演示模式可选）
-  departmentId String
-  department   Department @relation(fields: [departmentId], references: [id])
-  role         String   // 角色：sales, customer_service, operations, finance, ai_info, admin, mentor, trainee
-  status       String   @default("active") // active, inactive
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id            String     @id @default(cuid())
+  name          String // 用户姓名
+  email         String? // 邮箱（演示模式可选）
+  passwordHash  String? // 密码哈希（MVP 阶段可选，生产环境必须）
+  departmentId  String
+  department    Department @relation(fields: [departmentId], references: [id])
+  role          String // 角色：sales, customer_service, operations, finance, ai_info, admin, mentor, trainee
+  status        String     @default("active") // active, inactive
+  loginAttempts Int        @default(0) // 登录失败次数
+  lockedUntil   DateTime? // 锁定截止时间
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
 
-  submittedLinks     PolicyLink[]     @relation("Submitter")
-  generatedBriefs    PolicyBrief[]    @relation("Generator")
-  pushedRecords      PushRecord[]     @relation("Pusher")
-  createdCards       KnowledgeCard[]  @relation("Creator")
-  reviewedCards      KnowledgeCard[]  @relation("Reviewer")
-  experienceQueries  ExperienceQuery[] @relation("Caller")
-  createdTasks       SOPTask[]        @relation("Mentor")
-  assignedTasks      SOPTask[]        @relation("Trainee")
-  submissions        SOPSubmission[]  @relation("Submitter")
-  reviewedSubmissions SOPSubmission[] @relation("Reviewer")
-  auditLogs          AuditLog[]
-  assignedAgentTasks AgentTask[] @relation("AgentTaskAssignee")
-  createdAgentTasks  AgentTask[] @relation("AgentTaskCreator")
+  submittedLinks      PolicyLink[]      @relation("Submitter")
+  generatedBriefs     PolicyBrief[]     @relation("Generator")
+  pushedRecords       PushRecord[]      @relation("Pusher")
+  createdCards        KnowledgeCard[]   @relation("Creator")
+  reviewedCards       KnowledgeCard[]   @relation("Reviewer")
+  experienceQueries   ExperienceQuery[] @relation("Caller")
+  createdTasks        SOPTask[]         @relation("Mentor")
+  assignedTasks       SOPTask[]         @relation("Trainee")
+  submissions         SOPSubmission[]   @relation("Submitter")
+  reviewedSubmissions SOPSubmission[]   @relation("Reviewer")
+  auditLogs           AuditLog[]
+  assignedAgentTasks  AgentTask[]       @relation("AgentTaskAssignee")
+  createdAgentTasks   AgentTask[]       @relation("AgentTaskCreator")
+  feedbacks           Feedback[]
 
   @@map("users")
 }
@@ -60,113 +64,109 @@ model User {
 
 // 政策链接
 model PolicyLink {
-  id             String   @id @default(cuid())
-  url            String   // 政策链接 URL
-  title          String?  // 政策标题
-  source         String?  // 来源网站
-  submitterId    String
-  submitter      User     @relation("Submitter", fields: [submitterId], references: [id])
-  departmentId   String?  // 适用部门
-  customerType   String?  // 适用客户类型：restaurant, retail, store, advertising, startup, individual
-  status         String   @default("submitted") // submitted, collected, brief_generated, reviewed, pushed, archived
-  collectedAt    DateTime? // 内容采集时间
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  id           String    @id @default(cuid())
+  url          String // 政策链接 URL
+  title        String? // 政策标题
+  source       String? // 来源网站
+  submitterId  String
+  submitter    User      @relation("Submitter", fields: [submitterId], references: [id])
+  departmentId String? // 适用部门
+  customerType String? // 适用客户类型：restaurant, retail, store, advertising, startup, individual
+  status       String    @default("submitted") // submitted, collected, brief_generated, reviewed, pushed, archived
+  collectedAt  DateTime? // 内容采集时间
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
-  brief          PolicyBrief?
-  pushRecords    PushRecord[]
-
-  @@map("policy_links")
+  brief       PolicyBrief?
+  pushRecords PushRecord[]
 
   @@index([status])
   @@index([submitterId])
   @@index([customerType])
   @@index([createdAt])
+  @@map("policy_links")
 }
 
 // 政策简报
 model PolicyBrief {
-  id              String   @id @default(cuid())
-  policyLinkId    String   @unique
-  policyLink      PolicyLink @relation(fields: [policyLinkId], references: [id])
-  title           String   // 简报标题
-  summary         String   // 摘要
-  applicableTo    String?  // 适用对象（JSON 数组）
-  keyClauses      String?  // 关键条款
+  id                String     @id @default(cuid())
+  policyLinkId      String     @unique
+  policyLink        PolicyLink @relation(fields: [policyLinkId], references: [id])
+  title             String // 简报标题
+  summary           String // 摘要
+  applicableTo      String? // 适用对象（JSON 数组）
+  keyClauses        String? // 关键条款
   actionSuggestions String? // 行动建议
-  riskReminders   String?  // 风险提醒
-  sourceUrl       String?  // 来源链接
-  generatorId     String
-  generator       User     @relation("Generator", fields: [generatorId], references: [id])
-  reviewStatus    String   @default("draft") // draft, pending_review, reviewed, rejected
-  reviewedAt      DateTime?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  riskReminders     String? // 风险提醒
+  sourceUrl         String? // 来源链接
+  generatorId       String
+  generator         User       @relation("Generator", fields: [generatorId], references: [id])
+  reviewStatus      String     @default("draft") // draft, pending_review, reviewed, rejected
+  reviewedAt        DateTime?
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
 
-  pushRecords     PushRecord[]
-
-  @@map("policy_briefs")
+  pushRecords PushRecord[]
 
   @@index([reviewStatus])
   @@index([generatorId])
   @@index([createdAt])
+  @@map("policy_briefs")
 }
 
 // 模拟企微推送记录
 model PushRecord {
-  id              String   @id @default(cuid())
+  id              String      @id @default(cuid())
   policyBriefId   String
   policyBrief     PolicyBrief @relation(fields: [policyBriefId], references: [id])
   policyLinkId    String?
   policyLink      PolicyLink? @relation(fields: [policyLinkId], references: [id])
-  channel         String   @default("wecom") // wecom, email, sms
-  targetType      String   // department, role, user
-  targetId        String?  // 目标 ID
-  targetName      String?  // 目标名称（快照）
-  status          String   @default("pending") // pending, sent, delivered, failed
-  readStatus      String   @default("unread") // unread, read
-  payloadSnapshot String?  // 推送内容快照（JSON）
+  channel         String      @default("wecom") // wecom, email, sms
+  targetType      String // department, role, user
+  targetId        String? // 目标 ID
+  targetName      String? // 目标名称（快照）
+  status          String      @default("pending") // pending, sent, delivered, failed
+  readStatus      String      @default("unread") // unread, read
+  payloadSnapshot String? // 推送内容快照（JSON）
   pusherId        String
-  pusher          User     @relation("Pusher", fields: [pusherId], references: [id])
+  pusher          User        @relation("Pusher", fields: [pusherId], references: [id])
   sentAt          DateTime?
   readAt          DateTime?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-
-  @@map("push_records")
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
 
   @@index([policyBriefId])
   @@index([pusherId])
   @@index([status])
   @@index([readStatus])
   @@index([createdAt])
+  @@map("push_records")
 }
 
 // ==================== 知识库模块 ====================
 
 // 知识卡
 model KnowledgeCard {
-  id              String   @id @default(cuid())
-  title           String   // 知识卡标题
-  category        String   // 分类：data_checklist, tax_process, risk_reminder, service_boundary, faq, experience
-  tags            String?  // 标签（JSON 数组）
-  content         String   // 知识内容（Markdown）
-  departmentId    String?  // 所属部门
-  customerType    String?  // 适用客户类型
-  source          String?  // 来源
-  riskNotes       String?  // 风险提示
-  visibilityScope String   @default("department") // department, role, public
-  status          String   @default("draft") // draft, pending_review, published, rejected, archived
-  version         Int      @default(1)
-  creatorId       String
-  creator         User     @relation("Creator", fields: [creatorId], references: [id])
-  reviewerId      String?
-  reviewer        User?    @relation("Reviewer", fields: [reviewerId], references: [id])
-  reviewedAt      DateTime?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-
-  @@map("knowledge_cards")
+  id                 String              @id @default(cuid())
+  title              String // 知识卡标题
+  category           String // 分类：data_checklist, tax_process, risk_reminder, service_boundary, faq, experience
+  tags               String? // 标签（JSON 数组）
+  content            String // 知识内容（Markdown）
+  departmentId       String? // 所属部门
+  customerType       String? // 适用客户类型
+  source             String? // 来源
+  riskNotes          String? // 风险提示
+  visibilityScope    String              @default("department") // department, role, public
+  status             String              @default("draft") // draft, pending_review, published, rejected, archived
+  version            Int                 @default(1)
+  creatorId          String
+  creator            User                @relation("Creator", fields: [creatorId], references: [id])
+  reviewerId         String?
+  reviewer           User?               @relation("Reviewer", fields: [reviewerId], references: [id])
+  reviewedAt         DateTime?
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  knowledgeCardStats KnowledgeCardStats?
 
   @@index([status])
   @@index([category])
@@ -174,82 +174,81 @@ model KnowledgeCard {
   @@index([departmentId])
   @@index([visibilityScope])
   @@index([createdAt])
+  @@map("knowledge_cards")
 }
 
 // ==================== 经验调用模块 ====================
 
 // 经验调用
 model ExperienceQuery {
-  id              String   @id @default(cuid())
-  question        String   // 用户输入的问题
-  callerId        String
-  caller          User     @relation("Caller", fields: [callerId], references: [id])
-  retrievedCards  String?  // 检索到的知识卡 ID 列表（JSON）
-  generatedReply  String?  // 生成的回复建议（JSON）
-  policyExplanation String? // 政策解释
+  id                 String   @id @default(cuid())
+  question           String // 用户输入的问题
+  callerId           String
+  caller             User     @relation("Caller", fields: [callerId], references: [id])
+  retrievedCards     String? // 检索到的知识卡 ID 列表（JSON）
+  generatedReply     String? // 生成的回复建议（JSON）
+  policyExplanation  String? // 政策解释
   serviceOpportunity String? // 服务机会
-  salesScript     String?  // 销售话术
-  riskReminder    String?  // 风险提醒
-  citedSources    String?  // 引用来源（JSON 数组）
-  status          String   @default("pending") // pending, generated, reviewed
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-
-  @@map("experience_queries")
+  salesScript        String? // 销售话术
+  riskReminder       String? // 风险提醒
+  citedSources       String? // 引用来源（JSON 数组）
+  status             String   @default("pending") // pending, generated, reviewed
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
 
   @@index([callerId])
   @@index([status])
   @@index([createdAt])
+  @@map("experience_queries")
 }
 
 // ==================== SOP 训练模块 ====================
 
 // SOP 训练任务
 model SOPTask {
-  id              String   @id @default(cuid())
-  title           String   // 任务标题
-  description     String?  // 任务描述
-  template        String?  // SOP 模板（Markdown）
-  requirements    String?  // 训练要求
-  mentorId        String
-  mentor          User     @relation("Mentor", fields: [mentorId], references: [id])
-  traineeId       String
-  trainee         User     @relation("Trainee", fields: [traineeId], references: [id])
-  dueDate         DateTime? // 截止时间
-  status          String   @default("assigned") // assigned, in_progress, submitted, reviewed, completed
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id           String    @id @default(cuid())
+  title        String // 任务标题
+  description  String? // 任务描述
+  template     String? // SOP 模板（Markdown）
+  requirements String? // 训练要求
+  mentorId     String
+  mentor       User      @relation("Mentor", fields: [mentorId], references: [id])
+  traineeId    String
+  trainee      User      @relation("Trainee", fields: [traineeId], references: [id])
+  dueDate      DateTime? // 截止时间
+  status       String    @default("assigned") // assigned, in_progress, submitted, reviewed, completed
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
-  submissions     SOPSubmission[]
-
-  @@map("sop_tasks")
+  submissions SOPSubmission[]
 
   @@index([mentorId])
   @@index([traineeId])
   @@index([status])
   @@index([createdAt])
+  @@map("sop_tasks")
 }
 
 // SOP 提交
 model SOPSubmission {
-  id              String   @id @default(cuid())
-  taskId          String
-  task            SOPTask  @relation(fields: [taskId], references: [id])
-  content         String   // 提交的 SOP 内容（Markdown）
-  submitterId     String
-  submitter       User     @relation("Submitter", fields: [submitterId], references: [id])
+  id               String    @id @default(cuid())
+  taskId           String
+  task             SOPTask   @relation(fields: [taskId], references: [id])
+  content          String // 提交的 SOP 内容（Markdown）
+  submitterId      String
+  submitter        User      @relation("Submitter", fields: [submitterId], references: [id])
   inspectionReport String? // 检查报告（JSON）
-  completeness    Float?   // 完整性评分
-  missingSteps    String?  // 遗漏步骤
-  riskPoints      String?  // 风险点
-  executability   Float?   // 可执行性评分
-  reviewerId      String?
-  reviewer        User?    @relation("Reviewer", fields: [reviewerId], references: [id])
-  reviewComment   String?  // 审核意见
-  status          String   @default("submitted") // submitted, reviewing, approved, rejected, revision_required
-  approvedAt      DateTime?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  completeness     Float? // 完整性评分
+  missingSteps     String? // 遗漏步骤
+  riskPoints       String? // 风险点
+  executability    Float? // 可执行性评分
+  reviewerId       String?
+  reviewer         User?     @relation("Reviewer", fields: [reviewerId], references: [id])
+  reviewComment    String? // 审核意见
+  status           String    @default("submitted") // submitted, reviewing, approved, rejected, revision_required
+  approvedAt       DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
 
   @@map("sop_submissions")
 }
@@ -258,85 +257,82 @@ model SOPSubmission {
 
 // 审计日志
 model AuditLog {
-  id          String   @id @default(cuid())
-  userId      String
-  user        User     @relation(fields: [userId], references: [id])
-  action      String   // 操作类型：create, edit, review, publish, reject, query, generate, push, approve
-  entityType  String   // 实体类型：policy_link, policy_brief, knowledge_card, experience_query, sop_task, sop_submission
-  entityId    String?  // 实体 ID
-  details     String?  // 操作详情（JSON）
-  ipAddress   String?
-  createdAt   DateTime @default(now())
-
-  @@map("audit_logs")
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id])
+  action     String // 操作类型：create, edit, review, publish, reject, query, generate, push, approve
+  entityType String // 实体类型：policy_link, policy_brief, knowledge_card, experience_query, sop_task, sop_submission
+  entityId   String? // 实体 ID
+  details    String? // 操作详情（JSON）
+  ipAddress  String?
+  createdAt  DateTime @default(now())
 
   @@index([userId])
   @@index([entityType])
   @@index([action])
   @@index([createdAt])
+  @@map("audit_logs")
 }
 
 // ==================== Agent 任务模块（P0） ====================
 
 // Agent 任务
 model AgentTask {
-  id          String   @id @default(cuid())
-  type        String   // 任务类型：knowledge_review, sop_review, brief_generation, gap_fill
-  title       String   // 任务标题
-  description String?  // 任务描述
-  status      String   @default("pending") // 状态：pending, in_progress, completed, failed
-  priority    String   @default("medium") // 优先级：high, medium, low
-  assignedTo  String?  // 分配给（用户 ID）
-  assignedToUser User? @relation("AgentTaskAssignee", fields: [assignedTo], references: [id])
-  createdBy   String
-  createdByUser User @relation("AgentTaskCreator", fields: [createdBy], references: [id])
-  dueDate     DateTime? // 截止时间
-  completedAt DateTime? // 完成时间
-  result      String?  // 任务结果（JSON）
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  @@map("agent_tasks")
+  id             String    @id @default(cuid())
+  type           String // 任务类型：knowledge_review, sop_review, brief_generation, gap_fill
+  title          String // 任务标题
+  description    String? // 任务描述
+  status         String    @default("pending") // 状态：pending, in_progress, completed, failed
+  priority       String    @default("medium") // 优先级：high, medium, low
+  assignedTo     String? // 分配给（用户 ID）
+  assignedToUser User?     @relation("AgentTaskAssignee", fields: [assignedTo], references: [id])
+  createdBy      String
+  createdByUser  User      @relation("AgentTaskCreator", fields: [createdBy], references: [id])
+  dueDate        DateTime? // 截止时间
+  completedAt    DateTime? // 完成时间
+  result         String? // 任务结果（JSON）
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 
   @@index([status])
   @@index([assignedTo])
   @@index([priority])
   @@index([createdAt])
+  @@map("agent_tasks")
 }
 
 // ==================== 知识缺口模块（P0） ====================
 
 // 知识缺口
 model KnowledgeGap {
-  id              String   @id @default(cuid())
-  question        String   // 被问的问题
-  department      String?  // 所属部门
-  topic           String?  // 主题分类
-  frequency       Int      @default(1) // 被问次数
-  priority        String   @default("low") // 优先级：high (20+), medium (10-19), low (<10)
-  status          String   @default("pending") // 状态：pending, in_progress, resolved, ignored
-  suggestedAction String?  // 建议操作：create_card, update_card, rewrite_card
-  resolvedBy      String?  // 解决人（用户 ID）
+  id              String    @id @default(cuid())
+  question        String // 被问的问题
+  department      String? // 所属部门
+  topic           String? // 主题分类
+  frequency       Int       @default(1) // 被问次数
+  priority        String    @default("low") // 优先级：high (20+), medium (10-19), low (<10)
+  status          String    @default("pending") // 状态：pending, in_progress, resolved, ignored
+  suggestedAction String? // 建议操作：create_card, update_card, rewrite_card
+  resolvedBy      String? // 解决人（用户 ID）
   resolvedAt      DateTime? // 解决时间
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-
-  @@map("knowledge_gaps")
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
   @@index([status])
   @@index([priority])
   @@index([frequency])
+  @@map("knowledge_gaps")
 }
 
 // ==================== 问答热力图模块（P1） ====================
 
 // 问答热力图统计
 model QuestionHeatMap {
-  id          String   @id @default(cuid())
-  department  String   // 部门
-  topic       String   // 主题
-  frequency   Int      @default(0) // 问答次数
-  timeRange   String   @default("this_week") // 时间范围：today, this_week, this_month
+  id           String   @id @default(cuid())
+  department   String // 部门
+  topic        String // 主题
+  frequency    Int      @default(0) // 问答次数
+  timeRange    String   @default("this_week") // 时间范围：today, this_week, this_month
   calculatedAt DateTime @default(now()) // 计算时间
 
   @@map("question_heatmaps")
@@ -346,12 +342,55 @@ model QuestionHeatMap {
 
 // 质量监控指标
 model QualityMetrics {
-  id          String   @id @default(cuid())
-  metricType  String   // 指标类型：coverage, citation_rate, satisfaction, outdated_rate
-  value       Float    // 指标值
-  target      Float    // 目标值
-  department  String?  // 部门（可选，null 表示全公司）
+  id           String   @id @default(cuid())
+  metricType   String // 指标类型：coverage, citation_rate, satisfaction, outdated_rate
+  value        Float // 指标值
+  target       Float // 目标值
+  department   String? // 部门（可选，null 表示全公司）
   calculatedAt DateTime @default(now()) // 计算时间
 
   @@map("quality_metrics")
+}
+
+// ==================== 用户反馈模块（Phase 2） ====================
+
+// 用户反馈
+model Feedback {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id])
+  targetType String // 反馈目标类型：knowledge_card, experience_query
+  targetId   String // 反馈目标 ID
+  rating     Int? // 评分（1-5 星，可选）
+  helpful    Boolean? // 是否有帮助（可选）
+  comment    String? // 评论（可选）
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([userId])
+  @@index([targetType, targetId])
+  @@index([rating])
+  @@index([createdAt])
+  @@map("feedbacks")
+}
+
+// 知识卡统计（热度分析）
+model KnowledgeCardStats {
+  id              String        @id @default(cuid())
+  cardId          String        @unique
+  card            KnowledgeCard @relation(fields: [cardId], references: [id])
+  viewCount       Int           @default(0) // 访问量
+  citeCount       Int           @default(0) // 引用量
+  avgRating       Float         @default(0) // 平均评分
+  ratingCount     Int           @default(0) // 评分数量
+  helpfulCount    Int           @default(0) // 有帮助的数量
+  notHelpfulCount Int           @default(0) // 无帮助的数量
+  lastViewedAt    DateTime? // 最后访问时间
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@index([cardId])
+  @@index([viewCount])
+  @@index([avgRating])
+  @@map("knowledge_card_stats")
 }

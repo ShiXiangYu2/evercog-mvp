@@ -12,9 +12,16 @@ import {
   LOGIN_RATE_LIMIT,
 } from './rate-limit'
 
+// 清空存储的辅助函数
+function clearStore() {
+  // 通过导入模块并访问内部状态来清空
+  // 由于 store 是模块内部的，我们需要重置它
+  vi.resetModules()
+}
+
 describe('Rate Limiting', () => {
   beforeEach(() => {
-    // 清除所有存储的记录
+    // 每个测试使用不同的 key 避免污染
     vi.clearAllTimers()
   })
 
@@ -32,27 +39,29 @@ describe('Rate Limiting', () => {
 
     it('should deny request exceeding limit', () => {
       const config = { windowMs: 60000, maxRequests: 3 }
+      const key = `deny-test-${Date.now()}`
 
       // 前 3 次应该允许
-      checkRateLimit('test-key', config)
-      checkRateLimit('test-key', config)
-      const third = checkRateLimit('test-key', config)
+      checkRateLimit(key, config)
+      checkRateLimit(key, config)
+      const third = checkRateLimit(key, config)
       expect(third.allowed).toBe(true)
 
       // 第 4 次应该拒绝
-      const fourth = checkRateLimit('test-key', config)
+      const fourth = checkRateLimit(key, config)
       expect(fourth.allowed).toBe(false)
       expect(fourth.remaining).toBe(0)
     })
 
     it('should reset window after expiry', () => {
       const config = { windowMs: 100, maxRequests: 2 }
+      const key = `reset-test-${Date.now()}`
 
-      checkRateLimit('test-key', config)
-      checkRateLimit('test-key', config)
+      checkRateLimit(key, config)
+      checkRateLimit(key, config)
 
       // 超过限制
-      const denied = checkRateLimit('test-key', config)
+      const denied = checkRateLimit(key, config)
       expect(denied.allowed).toBe(false)
 
       // 等待窗口过期
@@ -73,12 +82,14 @@ describe('Rate Limiting', () => {
 
     it('should track different keys separately', () => {
       const config = { windowMs: 60000, maxRequests: 2 }
+      const key1 = `key1-${Date.now()}`
+      const key2 = `key2-${Date.now()}`
 
-      checkRateLimit('key-1', config)
-      checkRateLimit('key-1', config)
+      checkRateLimit(key1, config)
+      checkRateLimit(key1, config)
 
       // key-2 应该独立计算
-      const result = checkRateLimit('key-2', config)
+      const result = checkRateLimit(key2, config)
       expect(result.allowed).toBe(true)
       expect(result.current).toBe(1)
     })
@@ -147,13 +158,15 @@ describe('Rate Limiting', () => {
 
     it('should return limited: true with response when exceeded', () => {
       const request = new Request('http://localhost')
-      const config = { windowMs: 60000, maxRequests: 1, byUser: false }
+      const config = { windowMs: 60000, maxRequests: 1, byUser: true }
 
-      // 第一次允许
-      isRateLimited(request, config)
+      // 第一次允许（使用 user ID）
+      isRateLimited(request, config, `exceed-user-${Date.now()}`)
 
-      // 第二次拒绝
-      const { limited, response } = isRateLimited(request, config)
+      // 第二次拒绝（同一个 user ID）
+      const userId = `exceed-user-${Date.now()}`
+      isRateLimited(request, config, userId)
+      const { limited, response } = isRateLimited(request, config, userId)
 
       expect(limited).toBe(true)
       expect(response).toBeDefined()

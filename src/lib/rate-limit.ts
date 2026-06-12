@@ -120,18 +120,25 @@ export function getClientIdentifier(request: Request): string {
     return realIp
   }
 
-  // 使用 Connection 中的 IP
-  // 注意：Next.js Edge Runtime 不支持 request.socket
+  // 使用 Host 头区分不同客户端（开发环境）
+  const host = request.headers.get('host')
+  if (host) {
+    return `host:${host}`
+  }
+
   // 返回默认标识
   return 'unknown'
 }
 
 // ==================== 预设配置 ====================
 
-/** 匿名用户限制: 60 次/分钟 */
+// 开发环境使用更宽松的限制
+const isDev = process.env.NODE_ENV === 'development'
+
+/** 匿名用户限制: 开发环境 600 次/分钟，生产环境 60 次/分钟 */
 export const ANONYMOUS_RATE_LIMIT: RateLimitConfig = {
   windowMs: 60 * 1000,
-  maxRequests: 60,
+  maxRequests: isDev ? 600 : 60,
   byUser: false,
 }
 

@@ -99,7 +99,6 @@ export class ReviewService {
       formatCheck,
       completenessCheck,
       riskCheck,
-      duplicateCheck,
     })
 
     // 6. 确定建议操作

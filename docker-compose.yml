@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  evercog:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=file:/app/data/prod.db
+      - JWT_SECRET=${JWT_SECRET:-your-production-secret-key}
+      - LLM_PROVIDER=${LLM_PROVIDER:-mock}
+      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY:-}
+      - CORS_ORIGIN=${CORS_ORIGIN:-http://localhost:3000}
+    volumes:
+      - evercog-data:/app/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  evercog-data:
+    driver: local

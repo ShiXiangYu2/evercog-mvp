@@ -141,20 +141,23 @@ export class TaskExecutor {
    */
   private async executeKnowledgeReview(task: {
     id: string
+    title?: string
     description: string | null
   }): Promise<ReviewResult> {
     // 从任务描述中提取知识卡 ID
     const cardIdMatch = task.description?.match(/card[_-]?id[:\s]*([a-z0-9-]+)/i)
     if (!cardIdMatch) {
       // 尝试从任务标题中提取
-      const titleMatch = task.title.match(/[「【](.+?)[」】]/)
-      if (titleMatch) {
-        // 根据标题查找知识卡
-        const card = await prisma.knowledgeCard.findFirst({
-          where: { title: titleMatch[1] },
-        })
-        if (card) {
-          return reviewKnowledgeCard(card.id)
+      if (task.title) {
+        const titleMatch = task.title.match(/[「【](.+?)[」】]/)
+        if (titleMatch) {
+          // 根据标题查找知识卡
+          const card = await prisma.knowledgeCard.findFirst({
+            where: { title: titleMatch[1] },
+          })
+          if (card) {
+            return reviewKnowledgeCard(card.id)
+          }
         }
       }
       throw new Error('Cannot extract card ID from task')
