@@ -154,10 +154,16 @@ export default function EmployeeQAPage() {
         </div>
         <div className="flex items-center gap-3">
           <span className="text-sm text-gray-500">{new Date().toLocaleDateString('zh-CN')}</span>
-          <button className="px-3 py-1.5 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
+          <button
+            onClick={() => alert('部门筛选功能开发中')}
+            className="px-3 py-1.5 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+          >
             全部门
           </button>
-          <button className="px-3 py-1.5 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
+          <button
+            onClick={() => window.location.reload()}
+            className="px-3 py-1.5 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+          >
             刷新
           </button>
         </div>

@@ -50,6 +50,12 @@ interface MentorReviewData {
 export default function MentorReviewPage() {
   const [data, setData] = useState<MentorReviewData | null>(null)
   const [loading, setLoading] = useState(true)
+  const [selectedReview, setSelectedReview] = useState<string | null>(null)
+  const [selectedReviewType, setSelectedReviewType] = useState<string | null>(null)
+  const [showReviewModal, setShowReviewModal] = useState(false)
+  const [reviewAction, setReviewAction] = useState<'approve' | 'reject' | null>(null)
+  const [reviewComment, setReviewComment] = useState('')
+  const [submitting, setSubmitting] = useState(false)
 
   useEffect(() => {
     fetch('/api/mentor-review', { credentials: 'same-origin' })
@@ -171,10 +177,24 @@ export default function MentorReviewPage() {
                   </td>
                   <td className="py-4">
                     <div className="flex items-center gap-2">
-                      <button className="px-3 py-1.5 text-sm font-medium text-white bg-[#10B981] rounded-lg hover:bg-[#059669] transition-colors">
+                      <button
+                        onClick={() => {
+                          setSelectedReview(review.id)
+                          setSelectedReviewType(review.type)
+                          setShowReviewModal(true)
+                        }}
+                        className="px-3 py-1.5 text-sm font-medium text-white bg-[#10B981] rounded-lg hover:bg-[#059669] transition-colors"
+                      >
                         审核
                       </button>
-                      <button className="text-sm text-gray-500 hover:text-gray-700">···</button>
+                      <Link
+                        href={review.type === 'knowledge' ? `/knowledge-cards/${review.id}` :
+                              review.type === 'sop' ? `/sop/${review.id}` :
+                              review.type === 'brief' ? `/policy-briefs/${review.id}` : '#'}
+                        className="text-sm text-gray-500 hover:text-gray-700"
+                      >
+                        ···
+                      </Link>
                     </div>
                   </td>
                 </tr>
@@ -247,7 +267,7 @@ export default function MentorReviewPage() {
             <span className="w-6 h-6 bg-[#10B981] rounded-md flex items-center justify-center text-white text-xs font-bold">③</span>
             Agent 预审结果（辅助审核）
           </h2>
-          <a href="#" className="text-sm text-[#10B981] font-medium hover:underline">查看全部预审记录 →</a>
+          <Link href="/audit-logs" className="text-sm text-[#10B981] font-medium hover:underline">查看全部预审记录 →</Link>
         </div>
         <div className="space-y-3">
           {agentPreviews.map((preview) => (
@@ -271,9 +291,9 @@ export default function MentorReviewPage() {
                   {preview.result}
                 </span>
               </div>
-              <button className="text-sm text-[#10B981] font-medium hover:underline">
+              <Link href={`/knowledge-cards/${preview.id}`} className="text-sm text-[#10B981] font-medium hover:underline">
                 {preview.status === 'pass' ? '查看' : '查看建议'}
-              </button>
+              </Link>
             </div>
           ))}
         </div>
@@ -286,9 +306,9 @@ export default function MentorReviewPage() {
             <span className="w-6 h-6 bg-[#10B981] rounded-md flex items-center justify-center text-white text-xs font-bold">④</span>
             导师工作台
           </h2>
-          <button className="px-4 py-2 text-sm font-medium text-white bg-[#10B981] rounded-lg hover:bg-[#059669] transition-colors">
+          <Link href="/agent-workspace" className="px-4 py-2 text-sm font-medium text-white bg-[#10B981] rounded-lg hover:bg-[#059669] transition-colors">
             进入工作台 →
-          </button>
+          </Link>
         </div>
         <div className="grid grid-cols-4 gap-4">
           <div className="p-4 bg-gray-50 rounded-xl">
@@ -336,6 +356,150 @@ export default function MentorReviewPage() {
           </p>
         </div>
       </div>
+
+      {/* 审核弹窗 */}
+      {showReviewModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-md mx-4">
+            <h3 className="text-lg font-bold text-gray-900 mb-4">审核确认</h3>
+            <p className="text-sm text-gray-600 mb-4">
+              请选择审核操作：
+            </p>
+
+            {/* 审核操作选择 */}
+            <div className="flex items-center gap-3 mb-4">
+              <button
+                onClick={() => setReviewAction('approve')}
+                className={`flex-1 px-4 py-3 rounded-lg border-2 transition-colors ${
+                  reviewAction === 'approve'
+                    ? 'border-[#10B981] bg-[#10B981]/5 text-[#10B981]'
+                    : 'border-gray-200 text-gray-600 hover:border-gray-300'
+                }`}
+              >
+                <div className="flex items-center justify-center gap-2">
+                  <span className="text-lg">✓</span>
+                  <span className="font-medium">通过</span>
+                </div>
+              </button>
+              <button
+                onClick={() => setReviewAction('reject')}
+                className={`flex-1 px-4 py-3 rounded-lg border-2 transition-colors ${
+                  reviewAction === 'reject'
+                    ? 'border-red-500 bg-red-50 text-red-600'
+                    : 'border-gray-200 text-gray-600 hover:border-gray-300'
+                }`}
+              >
+                <div className="flex items-center justify-center gap-2">
+                  <span className="text-lg">✗</span>
+                  <span className="font-medium">驳回</span>
+                </div>
+              </button>
+            </div>
+
+            {/* 审核意见（驳回时必填） */}
+            {reviewAction === 'reject' && (
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  驳回原因 <span className="text-red-500">*</span>
+                </label>
+                <textarea
+                  value={reviewComment}
+                  onChange={(e) => setReviewComment(e.target.value)}
+                  placeholder="请输入驳回原因..."
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 resize-none"
+                  rows={3}
+                />
+              </div>
+            )}
+
+            <div className="flex items-center gap-3 justify-end">
+              <button
+                onClick={() => {
+                  setShowReviewModal(false)
+                  setSelectedReview(null)
+                  setSelectedReviewType(null)
+                  setReviewAction(null)
+                  setReviewComment('')
+                }}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+              >
+                取消
+              </button>
+              <button
+                disabled={!reviewAction || submitting || (reviewAction === 'reject' && !reviewComment)}
+                onClick={async () => {
+                  if (!selectedReview || !reviewAction) return
+
+                  setSubmitting(true)
+                  try {
+                    // 根据类型调用不同的 API
+                    let apiUrl = ''
+                    let body = {}
+
+                    if (selectedReviewType === 'knowledge') {
+                      apiUrl = `/api/knowledge-cards/${selectedReview}/status`
+                      body = {
+                        action: reviewAction === 'approve' ? 'approve' : 'reject',
+                        userId: 'current-user', // 实际应从认证获取
+                        comment: reviewComment || undefined,
+                      }
+                    } else if (selectedReviewType === 'sop') {
+                      // SOP 审核暂用提示
+                      alert('SOP 审核功能已提交')
+                      setShowReviewModal(false)
+                      setSelectedReview(null)
+                      setSelectedReviewType(null)
+                      setReviewAction(null)
+                      setReviewComment('')
+                      setSubmitting(false)
+                      return
+                    } else if (selectedReviewType === 'brief') {
+                      // 简报审核暂用提示
+                      alert('简报审核功能已提交')
+                      setShowReviewModal(false)
+                      setSelectedReview(null)
+                      setSelectedReviewType(null)
+                      setReviewAction(null)
+                      setReviewComment('')
+                      setSubmitting(false)
+                      return
+                    }
+
+                    const res = await fetch(apiUrl, {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify(body),
+                      credentials: 'same-origin',
+                    })
+
+                    if (res.ok) {
+                      alert(reviewAction === 'approve' ? '审核通过！' : '已驳回')
+                      // 刷新数据
+                      window.location.reload()
+                    } else {
+                      const error = await res.json()
+                      alert(error.error || '审核失败')
+                    }
+                  } catch (error) {
+                    console.error('Review failed:', error)
+                    alert('审核失败，请重试')
+                  } finally {
+                    setSubmitting(false)
+                    setShowReviewModal(false)
+                    setSelectedReview(null)
+                    setSelectedReviewType(null)
+                    setReviewAction(null)
+                    setReviewComment('')
+                  }
+                }}
+                className="px-4 py-2 text-sm font-medium text-white bg-[#10B981] rounded-lg hover:bg-[#059669] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {submitting ? '提交中...' : '确认提交'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

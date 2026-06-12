@@ -348,10 +348,38 @@ export default function SettingsPage() {
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-bold text-gray-900">审计日志</h2>
                 <div className="flex items-center gap-3">
-                  <button className="px-3 py-1.5 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
+                  <button
+                    onClick={() => alert('筛选功能开发中')}
+                    className="px-3 py-1.5 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                  >
                     筛选
                   </button>
-                  <button className="px-3 py-1.5 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
+                  <button
+                    onClick={async () => {
+                      try {
+                        const res = await fetch('/api/export/audit-logs/csv', {
+                          credentials: 'same-origin',
+                        })
+                        if (res.ok) {
+                          const blob = await res.blob()
+                          const url = window.URL.createObjectURL(blob)
+                          const a = document.createElement('a')
+                          a.href = url
+                          a.download = `audit-logs-${new Date().toISOString().split('T')[0]}.csv`
+                          document.body.appendChild(a)
+                          a.click()
+                          window.URL.revokeObjectURL(url)
+                          document.body.removeChild(a)
+                        } else {
+                          alert('导出失败')
+                        }
+                      } catch (error) {
+                        console.error('Export failed:', error)
+                        alert('导出失败，请重试')
+                      }
+                    }}
+                    className="px-3 py-1.5 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                  >
                     导出
                   </button>
                 </div>
@@ -382,9 +410,9 @@ export default function SettingsPage() {
                   </div>
                 ))}
               </div>
-              <a href="#" className="block text-center text-sm text-[#10B981] font-medium mt-4 hover:underline">
+              <Link href="/audit-logs" className="block text-center text-sm text-[#10B981] font-medium mt-4 hover:underline">
                 查看全部日志 →
-              </a>
+              </Link>
             </div>
           )}
         </div>

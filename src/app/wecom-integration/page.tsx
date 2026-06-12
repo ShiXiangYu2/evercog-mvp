@@ -256,7 +256,7 @@ export default function WeComIntegrationPage() {
               <span className="w-6 h-6 bg-[#10B981] rounded-md flex items-center justify-center text-white text-xs font-bold">③</span>
               部门接入情况
             </h2>
-            <a href="#" className="text-sm text-[#10B981] font-medium hover:underline">查看全部部门 →</a>
+            <Link href="/settings/permissions" className="text-sm text-[#10B981] font-medium hover:underline">查看全部部门 →</Link>
           </div>
           <div className="space-y-3">
             {departmentStatus.map((dept) => (
@@ -277,7 +277,18 @@ export default function WeComIntegrationPage() {
               </div>
             ))}
           </div>
-          <button className="w-full mt-4 px-4 py-2 text-sm font-medium text-[#10B981] bg-[#10B981]/10 rounded-lg hover:bg-[#10B981]/20 transition-colors">
+          <button
+            onClick={() => {
+              // 生成邀请链接（模拟）
+              const inviteUrl = `https://work.weixin.qq.com/api/invoke?invite_code=${Date.now()}`
+              navigator.clipboard.writeText(inviteUrl).then(() => {
+                alert('邀请链接已复制到剪贴板！\n\n' + inviteUrl)
+              }).catch(() => {
+                alert('邀请链接：\n' + inviteUrl)
+              })
+            }}
+            className="w-full mt-4 px-4 py-2 text-sm font-medium text-[#10B981] bg-[#10B981]/10 rounded-lg hover:bg-[#10B981]/20 transition-colors"
+          >
             邀请接入
           </button>
         </div>

@@ -185,8 +185,39 @@ export default function SOPDetailPage({ params }: { params: Promise<{ id: string
 
   const handleSaveAsKnowledge = async () => {
     if (!selectedSubmission || !task) return
-    alert('已沉淀为知识卡草稿！（Demo 模拟）')
-    setShowKnowledgeModal(false)
+
+    setSubmitting(true)
+    try {
+      // 创建知识卡
+      const res = await fetch('/api/knowledge-cards', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: `${task.title} - SOP 沉淀`,
+          category: 'experience',
+          content: selectedSubmission.content || 'SOP 内容',
+          visibilityScope: 'department',
+          creatorId: currentUser?.id,
+        }),
+        credentials: 'same-origin',
+      })
+
+      if (res.ok) {
+        const card = await res.json()
+        alert('已成功沉淀为知识卡！')
+        setShowKnowledgeModal(false)
+        // 跳转到知识卡编辑页面
+        window.location.href = `/knowledge-cards/${card.id}`
+      } else {
+        const error = await res.json()
+        alert(error.error || '创建失败')
+      }
+    } catch (error) {
+      console.error('Failed to save as knowledge:', error)
+      alert('创建失败，请重试')
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   const formatDate = (dateStr: string | null) => {
