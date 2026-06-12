@@ -23,7 +23,7 @@ export default function IntegrationsPage() {
 
   // 加载配置
   useEffect(() => {
-    fetch('/api/settings')
+    fetch('/api/settings', { credentials: 'same-origin' })
       .then((res) => res.json())
       .then((data) => {
         if (data.wecom) {

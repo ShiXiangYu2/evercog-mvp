@@ -59,7 +59,7 @@ export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState('users')
 
   useEffect(() => {
-    fetch('/api/settings')
+    fetch('/api/settings', { credentials: 'same-origin' })
       .then((res) => res.json())
       .then((data) => {
         if (data.error) {

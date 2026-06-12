@@ -56,7 +56,7 @@ export default function AgentWorkspacePage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetch('/api/agent-workspace')
+    fetch('/api/agent-workspace', { credentials: 'same-origin' })
       .then((res) => res.json())
       .then((data) => {
         if (data.error) {

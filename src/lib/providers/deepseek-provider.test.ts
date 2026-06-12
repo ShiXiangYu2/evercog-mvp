@@ -4,14 +4,15 @@
  * 注意：这些测试需要有效的 DEEPSEEK_API_KEY
  * 在 CI/CD 中跳过这些测试，或使用 mock 模式
  */
-import { describe, it, expect, beforeAll, afterAll } from 'vitest'
+import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest'
 
 // 仅在有 API Key 时运行测试
 const hasApiKey = !!process.env.DEEPSEEK_API_KEY
 const describeIfApiAvailable = hasApiKey ? describe : describe.skip
 
 describeIfApiAvailable('DeepSeekLLMProvider', () => {
-  let provider: Awaited<ReturnType<typeof import('./deepseek-provider').DeepSeekLLMProvider>> | null = null
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let provider: any = null
 
   beforeAll(async () => {
     // 设置测试环境

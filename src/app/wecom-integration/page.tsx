@@ -57,7 +57,7 @@ export default function WeComIntegrationPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetch('/api/wecom-integration')
+    fetch('/api/wecom-integration', { credentials: 'same-origin' })
       .then((res) => res.json())
       .then((data) => {
         if (data.error) {

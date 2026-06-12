@@ -62,7 +62,7 @@ export default function PolicyIntelligencePage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetch('/api/policy-intelligence')
+    fetch('/api/policy-intelligence', { credentials: 'same-origin' })
       .then((res) => res.json())
       .then((data) => {
         setData(data)

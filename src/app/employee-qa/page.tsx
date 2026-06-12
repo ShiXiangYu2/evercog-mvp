@@ -54,7 +54,7 @@ export default function EmployeeQAPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetch('/api/employee-qa')
+    fetch('/api/employee-qa', { credentials: 'same-origin' })
       .then((res) => res.json())
       .then((data) => {
         if (data.error) {

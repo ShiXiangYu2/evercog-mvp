@@ -2,6 +2,7 @@
  * Experience Query API 测试
  * 测试经验调用功能
  */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { POST } from '@/app/api/experience/query/route'
 import {

@@ -64,7 +64,9 @@ export default function KnowledgeHubPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetch('/api/knowledge-hub')
+    fetch('/api/knowledge-hub', {
+      credentials: 'same-origin', // 携带 Cookie 认证
+    })
       .then((res) => res.json())
       .then((data) => {
         if (data.error) {

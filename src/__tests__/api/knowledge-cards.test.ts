@@ -2,6 +2,7 @@
  * Knowledge Cards API 测试
  * 测试知识卡的 CRUD 操作和权限控制
  */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { GET, POST } from '@/app/api/knowledge-cards/route'
 import {

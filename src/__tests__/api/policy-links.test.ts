@@ -2,6 +2,7 @@
  * Policy Links API 测试
  * 测试政策链接的 CRUD 操作
  */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { GET, POST } from '@/app/api/policy-links/route'
 import {

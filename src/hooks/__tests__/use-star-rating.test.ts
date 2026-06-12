@@ -70,7 +70,7 @@ describe('useStarRating logic', () => {
 
   it('should handle initial value', () => {
     const initialValue = 3
-    let value = initialValue
+    const value = initialValue
 
     expect(value).toBe(3)
   })

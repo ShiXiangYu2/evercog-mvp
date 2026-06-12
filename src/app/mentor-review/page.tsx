@@ -52,7 +52,7 @@ export default function MentorReviewPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetch('/api/mentor-review')
+    fetch('/api/mentor-review', { credentials: 'same-origin' })
       .then((res) => res.json())
       .then((data) => {
         if (data.error) {
