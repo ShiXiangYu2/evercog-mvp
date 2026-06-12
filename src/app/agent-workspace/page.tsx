@@ -158,9 +158,9 @@ export default function AgentWorkspacePage() {
               </div>
             ))}
           </div>
-          <a href="#" className="block text-center text-sm text-[#10B981] font-medium mt-4 hover:underline">
+          <Link href="/mentor-review" className="block text-center text-sm text-[#10B981] font-medium mt-4 hover:underline">
             查看全部待办任务 →
-          </a>
+          </Link>
         </div>
 
         {/* 通知入口 */}
@@ -172,8 +172,15 @@ export default function AgentWorkspacePage() {
           <div className="space-y-3">
             {notifications.map((notification) => {
               const Icon = getNotificationIcon(notification.type)
+              const href = notification.type === 'review' ? '/mentor-review' :
+                          notification.type === 'policy' ? '/policy-intelligence' :
+                          '/settings/permissions'
               return (
-                <div key={notification.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer">
+                <Link
+                  key={notification.id}
+                  href={href}
+                  className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
+                >
                   <div className={`w-10 h-10 ${notification.bgColor} rounded-lg flex items-center justify-center`}>
                     <Icon className={`w-5 h-5 ${notification.color}`} />
                   </div>
@@ -182,7 +189,7 @@ export default function AgentWorkspacePage() {
                   </div>
                   <span className="text-lg font-bold text-gray-900">{notification.count}</span>
                   <span className="text-xs text-gray-500">条</span>
-                </div>
+                </Link>
               )
             })}
           </div>
@@ -196,7 +203,7 @@ export default function AgentWorkspacePage() {
             <span className="w-6 h-6 bg-[#10B981] rounded-md flex items-center justify-center text-white text-xs font-bold">③</span>
             成长计划
           </h2>
-          <a href="#" className="text-sm text-[#10B981] font-medium hover:underline">查看全部成长计划 →</a>
+          <Link href="/agent-workspace" className="text-sm text-[#10B981] font-medium hover:underline">查看全部成长计划 →</Link>
         </div>
         <div className="grid grid-cols-3 gap-4">
           {growthPlan.map((plan) => (
@@ -232,7 +239,7 @@ export default function AgentWorkspacePage() {
             <span className="w-6 h-6 bg-[#10B981] rounded-md flex items-center justify-center text-white text-xs font-bold">④</span>
             成长日志
           </h2>
-          <a href="#" className="text-sm text-[#10B981] font-medium hover:underline">查看全部成长记录 →</a>
+          <Link href="/audit-logs" className="text-sm text-[#10B981] font-medium hover:underline">查看全部成长记录 →</Link>
         </div>
         <div className="space-y-4">
           {growthLogs.map((log, index) => (

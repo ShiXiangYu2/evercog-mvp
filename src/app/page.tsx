@@ -58,6 +58,7 @@ interface PendingTask {
   type: 'review' | 'gap' | 'agent'
   priority: 'high' | 'medium' | 'low'
   deadline: string
+  href: string
 }
 
 export default function Home() {
@@ -89,6 +90,7 @@ export default function Home() {
             type: 'review',
             priority: 'high',
             deadline: '尽快处理',
+            href: '/mentor-review',
           })
         }
 
@@ -100,6 +102,7 @@ export default function Home() {
             type: 'gap',
             priority: 'high',
             deadline: '需要补充',
+            href: '/knowledge-hub',
           })
         }
 
@@ -111,6 +114,7 @@ export default function Home() {
             type: 'agent',
             priority: 'medium',
             deadline: '自动处理中',
+            href: '/agent-workspace',
           })
         }
 
@@ -122,6 +126,7 @@ export default function Home() {
             type: 'review',
             priority: 'medium',
             deadline: '尽快推送',
+            href: '/policy-briefs',
           })
         }
 
@@ -347,7 +352,11 @@ export default function Home() {
           {pendingTasks.length > 0 ? (
             <div className="space-y-3">
               {pendingTasks.map((task) => (
-                <div key={task.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer">
+                <Link
+                  key={task.id}
+                  href={task.href}
+                  className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
+                >
                   <div className={`w-2 h-2 rounded-full flex-shrink-0 ${
                     task.priority === 'high' ? 'bg-red-500' :
                     task.priority === 'medium' ? 'bg-amber-500' : 'bg-gray-400'
@@ -357,7 +366,7 @@ export default function Home() {
                     <p className="text-xs text-gray-500 mt-1">{task.deadline}</p>
                   </div>
                   <ArrowRight className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                </div>
+                </Link>
               ))}
             </div>
           ) : (
@@ -399,7 +408,11 @@ export default function Home() {
         {activities.length > 0 ? (
           <div className="space-y-4">
             {activities.slice(0, 5).map((activity) => (
-              <div key={activity.id} className="flex items-center gap-4 p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
+              <Link
+                key={activity.id}
+                href="/audit-logs"
+                className="flex items-center gap-4 p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors"
+              >
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <p className="text-sm font-semibold text-gray-900 truncate">{activity.user}</p>
@@ -407,7 +420,7 @@ export default function Home() {
                   </div>
                   <p className="text-xs text-gray-500 mt-1 truncate">{activity.action}</p>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         ) : (
@@ -429,27 +442,27 @@ export default function Home() {
           </Link>
         </div>
         <div className="grid grid-cols-3 gap-4">
-          <div className="p-4 bg-gray-50 rounded-xl">
+          <Link href="/knowledge-hub" className="p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors cursor-pointer">
             <div className="flex items-center gap-2 mb-2">
               <span className="text-lg">🔥</span>
               <span className="text-sm font-medium text-gray-700">最多访问</span>
             </div>
             <p className="text-sm text-gray-500">查看员工最常访问的知识卡</p>
-          </div>
-          <div className="p-4 bg-gray-50 rounded-xl">
+          </Link>
+          <Link href="/knowledge-hub" className="p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors cursor-pointer">
             <div className="flex items-center gap-2 mb-2">
               <span className="text-lg">📊</span>
               <span className="text-sm font-medium text-gray-700">最多引用</span>
             </div>
             <p className="text-sm text-gray-500">查看被引用最多次的知识卡</p>
-          </div>
-          <div className="p-4 bg-gray-50 rounded-xl">
+          </Link>
+          <Link href="/knowledge-hub" className="p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors cursor-pointer">
             <div className="flex items-center gap-2 mb-2">
               <span className="text-lg">⭐</span>
               <span className="text-sm font-medium text-gray-700">最高评分</span>
             </div>
             <p className="text-sm text-gray-500">查看评分最高的知识卡</p>
-          </div>
+          </Link>
         </div>
       </div>
 

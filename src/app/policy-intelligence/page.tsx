@@ -214,7 +214,11 @@ export default function PolicyIntelligencePage() {
           </div>
           <div className="space-y-4">
             {latestPolicies.map((policy) => (
-              <div key={policy.id} className="p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors cursor-pointer">
+              <Link
+                key={policy.id}
+                href={`/policy-links/${policy.id}`}
+                className="block p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors cursor-pointer"
+              >
                 <div className="flex items-start gap-3">
                   <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
                     <FileText className="w-5 h-5 text-blue-600" />
@@ -237,7 +241,7 @@ export default function PolicyIntelligencePage() {
                   </div>
                   <span className="text-xs text-gray-400">{policy.time}</span>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
           <Link href="/policy-links" className="block text-center text-sm text-[#10B981] font-medium mt-4 hover:underline">
@@ -256,8 +260,16 @@ export default function PolicyIntelligencePage() {
             <div className="space-y-3">
               {dataOverview.map((item) => {
                 const { icon: Icon, color, bgColor } = getOverviewIcon(item.type)
+                const href = item.type === 'link' ? '/policy-links' :
+                            item.type === 'knowledge' ? '/knowledge-cards' :
+                            item.type === 'brief' || item.type === 'pending' ? '/policy-briefs' :
+                            '/policy-briefs'
                 return (
-                  <div key={item.label} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <Link
+                    key={item.label}
+                    href={href}
+                    className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                  >
                     <div className="flex items-center gap-3">
                       <div className={`w-8 h-8 ${bgColor} rounded-lg flex items-center justify-center`}>
                         <Icon className={`w-4 h-4 ${color}`} />
@@ -265,7 +277,7 @@ export default function PolicyIntelligencePage() {
                       <span className="text-sm text-gray-600">{item.label}</span>
                     </div>
                     <span className="text-lg font-bold text-gray-900">{item.value}</span>
-                  </div>
+                  </Link>
                 )
               })}
             </div>

@@ -232,9 +232,9 @@ export default function EmployeeQAPage() {
               </tbody>
             </table>
           </div>
-          <a href="#" className="block text-center text-sm text-[#10B981] font-medium mt-4 hover:underline">
+          <Link href="/experience/history" className="block text-center text-sm text-[#10B981] font-medium mt-4 hover:underline">
             查看全部主题热度 →
-          </a>
+          </Link>
         </div>
 
         {/* 今日问答摘要 */}
@@ -244,7 +244,7 @@ export default function EmployeeQAPage() {
               <span className="w-6 h-6 bg-[#10B981] rounded-md flex items-center justify-center text-white text-xs font-bold">②</span>
               今日问答摘要（时间线）
             </h2>
-            <a href="#" className="text-sm text-[#10B981] font-medium hover:underline">查看全部 →</a>
+            <Link href="/experience/history" className="text-sm text-[#10B981] font-medium hover:underline">查看全部 →</Link>
           </div>
           <div className="space-y-4">
             {todayQA.map((qa, index) => (
@@ -281,9 +281,9 @@ export default function EmployeeQAPage() {
               </div>
             ))}
           </div>
-          <a href="#" className="block text-center text-sm text-[#10B981] font-medium mt-4 hover:underline">
+          <Link href="/experience/history" className="block text-center text-sm text-[#10B981] font-medium mt-4 hover:underline">
             查看全部问答记录 →
-          </a>
+          </Link>
         </div>
       </div>
 
@@ -294,7 +294,7 @@ export default function EmployeeQAPage() {
             <span className="w-6 h-6 bg-[#10B981] rounded-md flex items-center justify-center text-white text-xs font-bold">③</span>
             知识缺口追踪（Agent 自动发现）
           </h2>
-          <a href="#" className="text-sm text-[#10B981] font-medium hover:underline">全部缺口 →</a>
+          <Link href="/knowledge-hub" className="text-sm text-[#10B981] font-medium hover:underline">全部缺口 →</Link>
         </div>
         <div className="space-y-3">
           {knowledgeGapTracking.map((gap) => (
@@ -319,9 +319,9 @@ export default function EmployeeQAPage() {
             </div>
           ))}
         </div>
-        <a href="#" className="block text-center text-sm text-[#10B981] font-medium mt-4 hover:underline">
+        <Link href="/knowledge-hub" className="block text-center text-sm text-[#10B981] font-medium mt-4 hover:underline">
           查看全部知识缺口 →
-        </a>
+        </Link>
       </div>
 
       {/* 问答质量指标 */}
@@ -333,7 +333,7 @@ export default function EmployeeQAPage() {
           </h2>
           <div className="flex items-center gap-2">
             <span className="text-sm text-gray-500">较昨日</span>
-            <a href="#" className="text-sm text-[#10B981] font-medium hover:underline">查看质量报告 →</a>
+            <Link href="/knowledge-hub" className="text-sm text-[#10B981] font-medium hover:underline">查看质量报告 →</Link>
           </div>
         </div>
         <div className="grid grid-cols-4 gap-4">

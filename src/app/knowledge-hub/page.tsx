@@ -356,18 +356,18 @@ export default function KnowledgeHubPage() {
                       <span className={`px-2 py-0.5 text-xs font-medium rounded ${suggestion.tagColor}`}>
                         {suggestion.tag}
                       </span>
-                      <button className="text-sm text-[#10B981] font-medium hover:underline">
+                      <Link href="/knowledge-cards" className="text-sm text-[#10B981] font-medium hover:underline">
                         {suggestion.action}
-                      </button>
+                      </Link>
                     </div>
                   </div>
                 </div>
               </div>
             ))}
           </div>
-          <a href="#" className="block text-center text-sm text-[#10B981] font-medium mt-4 hover:underline">
+          <Link href="/knowledge-cards" className="block text-center text-sm text-[#10B981] font-medium mt-4 hover:underline">
             查看全部建议 →
-          </a>
+          </Link>
         </div>
 
         {/* 质量监控 */}
@@ -415,9 +415,9 @@ export default function KnowledgeHubPage() {
               </div>
             ))}
           </div>
-          <a href="#" className="block text-center text-sm text-[#10B981] font-medium mt-4 hover:underline">
+          <Link href="/knowledge-cards" className="block text-center text-sm text-[#10B981] font-medium mt-4 hover:underline">
             查看质量报告 →
-          </a>
+          </Link>
         </div>
       </div>
 
