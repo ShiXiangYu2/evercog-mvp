@@ -3,8 +3,6 @@
 import { useState, useEffect, useCallback, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import Sidebar from '@/components/Sidebar'
-import UserSwitcher from '@/components/UserSwitcher'
 import {
   Send,
   ArrowLeft,
@@ -212,8 +210,7 @@ function NewPushRecordContent() {
 
   if (loading) {
     return (
-      <div className="flex h-screen">
-        <Sidebar />
+      <div className="min-h-screen flex flex-col">
         <div className="flex-1 flex items-center justify-center">
           <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
         </div>
@@ -223,8 +220,7 @@ function NewPushRecordContent() {
 
   if (!briefId) {
     return (
-      <div className="flex h-screen">
-        <Sidebar />
+      <div className="min-h-screen flex flex-col">
         <div className="flex-1 flex flex-col items-center justify-center">
           <AlertTriangle className="w-16 h-16 text-amber-400 mb-4" />
           <p className="text-gray-600 font-semibold text-lg mb-4">请先选择一份已审核的政策简报</p>
@@ -242,8 +238,7 @@ function NewPushRecordContent() {
 
   if (success) {
     return (
-      <div className="flex h-screen">
-        <Sidebar />
+      <div className="min-h-screen flex flex-col">
         <div className="flex-1 flex flex-col items-center justify-center">
           <div className="bg-white rounded-lg p-12 text-center border-4 border-emerald-200">
             <CheckCircle className="w-16 h-16 text-emerald-500 mx-auto mb-4" />
@@ -259,9 +254,7 @@ function NewPushRecordContent() {
   }
 
   return (
-    <div className="flex h-screen">
-      <Sidebar />
-      <div className="flex-1 flex flex-col overflow-hidden">
+    <div className="min-h-screen flex flex-col">
         {/* Header */}
         <header className="bg-white px-8 py-5 flex items-center justify-between">
           <div className="flex items-center gap-4">
@@ -277,7 +270,6 @@ function NewPushRecordContent() {
               <p className="text-sm text-gray-500 mt-1 font-medium">从已审核简报创建推送记录</p>
             </div>
           </div>
-          <UserSwitcher />
         </header>
 
         {/* Main Content */}
@@ -533,7 +525,6 @@ function NewPushRecordContent() {
             </div>
           </div>
         </main>
-      </div>
     </div>
   )
 }
@@ -541,8 +532,7 @@ function NewPushRecordContent() {
 export default function NewPushRecordPage() {
   return (
     <Suspense fallback={
-      <div className="flex h-screen">
-        <Sidebar />
+      <div className="min-h-screen flex flex-col">
         <div className="flex-1 flex items-center justify-center">
           <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
         </div>

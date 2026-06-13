@@ -155,8 +155,8 @@ export default function Home() {
 
   // 快速入口
   const quickActions = [
-    { name: '上传政策', icon: '📄', description: '提交政策链接', href: '/policy-intelligence' },
-    { name: '生成简报', icon: '🤖', description: 'AI 自动生成简报', href: '/policy-intelligence' },
+    { name: '上传政策', icon: '📄', description: '提交政策链接', href: '/policy-links/new' },
+    { name: '生成简报', icon: '🤖', description: 'AI 自动生成简报', href: '/policy-briefs' },
     { name: '导师审核', icon: '👨‍🏫', description: '审核知识卡', href: '/mentor-review' },
     { name: '员工问答', icon: '💬', description: '向知识库提问', href: '/employee-qa' },
   ]

@@ -2,8 +2,6 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
-import Sidebar from '@/components/Sidebar'
-import UserSwitcher from '@/components/UserSwitcher'
 import {
   Send,
   Search,
@@ -164,9 +162,7 @@ export default function PushRecordsPage() {
   }
 
   return (
-    <div className="flex h-screen">
-      <Sidebar />
-      <div className="flex-1 flex flex-col overflow-hidden">
+    <div className="min-h-screen flex flex-col">
         {/* Header */}
         <header className="bg-white px-8 py-5 flex items-center justify-between">
           <div>
@@ -182,7 +178,6 @@ export default function PushRecordsPage() {
               <Plus className="w-5 h-5" />
               新建推送
             </Link>
-            <UserSwitcher />
           </div>
         </header>
 
@@ -450,6 +445,5 @@ export default function PushRecordsPage() {
           )}
         </main>
       </div>
-    </div>
   )
 }

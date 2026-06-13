@@ -3,8 +3,6 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import Sidebar from '@/components/Sidebar'
-import UserSwitcher from '@/components/UserSwitcher'
 import {
   ArrowLeft,
   GraduationCap,
@@ -91,10 +89,8 @@ export default function NewSOPTaskPage() {
   }
 
   return (
-    <div className="flex h-screen">
-      <Sidebar />
+    <div className="min-h-screen flex flex-col">
 
-      <div className="flex-1 flex flex-col overflow-hidden">
         {/* Header */}
         <header className="bg-white px-8 py-5 flex items-center justify-between">
           <div className="flex items-center gap-4">
@@ -114,7 +110,6 @@ export default function NewSOPTaskPage() {
               </h1>
             </div>
           </div>
-          <UserSwitcher />
         </header>
 
         {/* Form */}
@@ -265,6 +260,5 @@ export default function NewSOPTaskPage() {
           </form>
         </main>
       </div>
-    </div>
   )
 }

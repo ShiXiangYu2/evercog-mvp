@@ -2,8 +2,6 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import Sidebar from '@/components/Sidebar'
-import UserSwitcher from '@/components/UserSwitcher'
 import {
   MessageSquare,
   Search,
@@ -268,10 +266,8 @@ export default function ExperiencePage() {
   }
 
   return (
-    <div className="flex h-screen">
-      <Sidebar />
+    <div className="min-h-screen flex flex-col">
 
-      <div className="flex-1 flex flex-col overflow-hidden">
         {/* Header */}
         <header className="bg-white px-8 py-5 flex items-center justify-between">
           <div className="flex items-center gap-4">
@@ -306,7 +302,6 @@ export default function ExperiencePage() {
               <History className="w-4 h-4" strokeWidth={2} />
               调用历史
             </Link>
-            <UserSwitcher />
           </div>
         </header>
 
@@ -531,7 +526,6 @@ export default function ExperiencePage() {
             </div>
           )}
         </main>
-      </div>
     </div>
   )
 }

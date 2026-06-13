@@ -10,6 +10,7 @@ import { withAuth } from '@/lib/auth'
 import { validateBody, experienceQuerySchema } from '@/lib/validation'
 import { getLLMProvider } from '@/lib/llm-provider'
 import { searchKnowledgeCards } from '@/lib/knowledge-search'
+import { detectKnowledgeGaps } from '@/lib/agent/gap-detector'
 import logger from '@/lib/logger'
 
 // POST /api/experience/query - 提交问题并生成回复
@@ -41,7 +42,7 @@ export const POST = withAuth(async (request, { user }) => {
           question,
           frequency: 1,
           priority: 'high',
-          status: 'open',
+          status: 'pending',
           suggestedAction: 'create_card',
         },
       })
@@ -62,6 +63,18 @@ export const POST = withAuth(async (request, { user }) => {
         gapId: gap.id,
         question: question.substring(0, 50),
         userId: user.id,
+      })
+
+      // 异步触发缺口检测 - 检查是否有高频相似问题，自动创建 AgentTask
+      detectKnowledgeGaps({ days: 7, minFrequency: 3 }).then((result) => {
+        if (result.gapCount > 0) {
+          logger.info('Auto gap detection completed after query', {
+            gapCount: result.gapCount,
+            coverageRate: result.stats.coverageRate,
+          })
+        }
+      }).catch((err) => {
+        logger.error('Auto gap detection failed', err as Error)
       })
 
       return NextResponse.json({

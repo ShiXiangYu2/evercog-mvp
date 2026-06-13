@@ -3,8 +3,6 @@
 import { useState, useEffect, useCallback, use } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import Sidebar from '@/components/Sidebar'
-import UserSwitcher from '@/components/UserSwitcher'
 import {
   ArrowLeft,
   Send,
@@ -101,8 +99,7 @@ export default function SOPSubmitPage({ params }: { params: Promise<{ id: string
 
   if (loading) {
     return (
-      <div className="flex h-screen">
-        <Sidebar />
+      <div className="min-h-screen flex flex-col">
         <div className="flex-1 flex items-center justify-center">
           <div className="w-8 h-8 border-4 border-pink-500 border-t-transparent rounded-full animate-spin" />
         </div>
@@ -113,10 +110,8 @@ export default function SOPSubmitPage({ params }: { params: Promise<{ id: string
   if (!task) return null
 
   return (
-    <div className="flex h-screen">
-      <Sidebar />
+    <div className="min-h-screen flex flex-col">
 
-      <div className="flex-1 flex flex-col overflow-hidden">
         {/* Header */}
         <header className="bg-white px-8 py-5 flex items-center justify-between">
           <div className="flex items-center gap-4">
@@ -139,7 +134,6 @@ export default function SOPSubmitPage({ params }: { params: Promise<{ id: string
               </p>
             </div>
           </div>
-          <UserSwitcher />
         </header>
 
         {/* Content */}
@@ -238,6 +232,5 @@ export default function SOPSubmitPage({ params }: { params: Promise<{ id: string
           </div>
         </main>
       </div>
-    </div>
   )
 }

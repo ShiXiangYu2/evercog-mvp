@@ -2,8 +2,6 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
-import Sidebar from '@/components/Sidebar'
-import UserSwitcher from '@/components/UserSwitcher'
 import {
   History,
   Search,
@@ -160,10 +158,8 @@ export default function ExperienceHistoryPage() {
   }
 
   return (
-    <div className="flex h-screen">
-      <Sidebar />
+    <div className="min-h-screen flex flex-col">
 
-      <div className="flex-1 flex flex-col overflow-hidden">
         {/* Header */}
         <header className="bg-white px-8 py-5 flex items-center justify-between">
           <div>
@@ -187,7 +183,6 @@ export default function ExperienceHistoryPage() {
               <ArrowLeft className="w-4 h-4" strokeWidth={2} />
               返回问答
             </Link>
-            <UserSwitcher />
           </div>
         </header>
 
@@ -380,8 +375,8 @@ export default function ExperienceHistoryPage() {
               })}
 
               {/* Pagination */}
-              {totalPages > 1 && (
-                <div className="flex items-center justify-center gap-2 mt-8">
+               {totalPages > 1 && (
+                 <div className="flex items-center justify-center gap-2 mt-8">
                   <button
                     onClick={() => setPage(Math.max(1, page - 1))}
                     disabled={page === 1}
@@ -421,6 +416,5 @@ export default function ExperienceHistoryPage() {
           )}
         </main>
       </div>
-    </div>
   )
 }

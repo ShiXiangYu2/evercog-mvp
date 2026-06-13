@@ -16,6 +16,8 @@ import {
   HelpCircle,
   ArrowLeft,
   Loader2,
+  GraduationCap,
+  FileText,
 } from 'lucide-react'
 
 interface EmployeeQAData {
@@ -209,11 +211,12 @@ export default function EmployeeQAPage() {
         </div>
       )}
 
-      {/* 经验问答入口 */}
-      <Link href="/experience" className="block mb-8">
-        <div className="bg-gradient-to-r from-[#10B981] to-[#059669] rounded-xl p-6 text-white hover:shadow-lg transition-all duration-200 cursor-pointer">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
+      {/* 快捷入口 */}
+      <div className="grid grid-cols-2 gap-4 mb-8">
+        {/* 经验问答入口 */}
+        <Link href="/experience" className="block">
+          <div className="bg-gradient-to-r from-[#10B981] to-[#059669] rounded-xl p-6 text-white hover:shadow-lg transition-all duration-200 cursor-pointer h-full">
+            <div className="flex items-center gap-4 mb-4">
               <div className="w-14 h-14 bg-white/20 rounded-xl flex items-center justify-center">
                 <HelpCircle className="w-7 h-7 text-white" strokeWidth={2} />
               </div>
@@ -222,27 +225,52 @@ export default function EmployeeQAPage() {
                 <p className="text-sm text-white/80 mt-1">输入客户问题，AI 基于已审核知识生成回复建议</p>
               </div>
             </div>
-            <div className="flex items-center gap-2 px-4 py-2 bg-white/20 rounded-lg">
+            <div className="flex items-center gap-4 text-sm text-white/70">
+              <span className="flex items-center gap-1">
+                <CheckCircle className="w-4 h-4" />
+                引用已审核知识
+              </span>
+              <span className="flex items-center gap-1">
+                <MessageSquare className="w-4 h-4" />
+                展示来源与审核人
+              </span>
+            </div>
+            <div className="mt-4 flex items-center gap-2 px-4 py-2 bg-white/20 rounded-lg w-fit">
               <span className="text-sm font-medium">立即提问</span>
               <ArrowRight className="w-4 h-4" />
             </div>
           </div>
-          <div className="mt-4 flex items-center gap-6 text-sm text-white/70">
-            <span className="flex items-center gap-1">
-              <CheckCircle className="w-4 h-4" />
-              引用已审核知识
-            </span>
-            <span className="flex items-center gap-1">
-              <MessageSquare className="w-4 h-4" />
-              展示来源与审核人
-            </span>
-            <span className="flex items-center gap-1">
-              <AlertTriangle className="w-4 h-4" />
-              风险提示与适用场景
-            </span>
+        </Link>
+
+        {/* SOP 训练入口 */}
+        <Link href="/sop" className="block">
+          <div className="bg-gradient-to-r from-pink-500 to-pink-600 rounded-xl p-6 text-white hover:shadow-lg transition-all duration-200 cursor-pointer h-full">
+            <div className="flex items-center gap-4 mb-4">
+              <div className="w-14 h-14 bg-white/20 rounded-xl flex items-center justify-center">
+                <GraduationCap className="w-7 h-7 text-white" strokeWidth={2} />
+              </div>
+              <div>
+                <h2 className="text-lg font-bold">SOP 训练</h2>
+                <p className="text-sm text-white/80 mt-1">完成导师布置的 SOP 训练任务</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-4 text-sm text-white/70">
+              <span className="flex items-center gap-1">
+                <CheckCircle className="w-4 h-4" />
+                完成训练任务
+              </span>
+              <span className="flex items-center gap-1">
+                <FileText className="w-4 h-4" />
+                提交 SOP 内容
+              </span>
+            </div>
+            <div className="mt-4 flex items-center gap-2 px-4 py-2 bg-white/20 rounded-lg w-fit">
+              <span className="text-sm font-medium">查看任务</span>
+              <ArrowRight className="w-4 h-4" />
+            </div>
           </div>
-        </div>
-      </Link>
+        </Link>
+      </div>
 
       {/* 主要内容区 */}
       <div className="grid grid-cols-2 gap-6 mb-8">

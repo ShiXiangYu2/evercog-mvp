@@ -2,8 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
-import Sidebar from '@/components/Sidebar'
-import UserSwitcher from '@/components/UserSwitcher'
+import { useAuth } from '@/components/AuthProvider'
 import {
   GraduationCap,
   Plus,
@@ -17,6 +16,7 @@ import {
   ChevronRight,
   Filter,
   ChevronDown,
+  ArrowLeft,
 } from 'lucide-react'
 
 interface SOPTaskData {
@@ -59,19 +59,19 @@ const taskStatusIcons: Record<string, React.ElementType> = {
 const statusSteps = ['assigned', 'in_progress', 'submitted', 'reviewed', 'completed']
 
 export default function SOPPage() {
+  const { user: authUser } = useAuth()
   const [tasks, setTasks] = useState<SOPTaskData[]>([])
   const [total, setTotal] = useState(0)
   const [loading, setLoading] = useState(true)
-  const [currentUser, setCurrentUser] = useState<{ id: string; name: string; role: string } | null>(null)
   const [filterStatus, setFilterStatus] = useState('')
   const [showFilters, setShowFilters] = useState(false)
 
   const fetchTasks = useCallback(async () => {
-    if (!currentUser) return
+    if (!authUser) return
     setLoading(true)
     const params = new URLSearchParams()
-    params.set('userId', currentUser.id)
-    params.set('role', currentUser.role)
+    params.set('userId', authUser.id)
+    params.set('role', authUser.role)
     if (filterStatus) params.set('status', filterStatus)
 
     try {
@@ -84,22 +84,13 @@ export default function SOPPage() {
     } finally {
       setLoading(false)
     }
-  }, [currentUser, filterStatus])
-
-  useEffect(() => {
-    const userId = localStorage.getItem('currentUserId') || '5'
-    const roleMap: Record<string, string> = {
-      '1': 'sales', '2': 'customer_service', '3': 'operations',
-      '4': 'finance', '5': 'mentor', '6': 'trainee', '7': 'admin', '8': 'ai_info',
-    }
-    setCurrentUser({ id: userId, name: '', role: roleMap[userId] || 'mentor' })
-  }, [])
+  }, [authUser?.id, authUser?.role, filterStatus])
 
   useEffect(() => {
     fetchTasks()
   }, [fetchTasks])
 
-  const isMentor = currentUser?.role === 'mentor' || currentUser?.role === 'admin'
+  const isMentor = authUser?.role === 'mentor' || authUser?.role === 'admin'
 
   const formatDate = (dateStr: string | null) => {
     if (!dateStr) return '无截止日期'
@@ -113,22 +104,32 @@ export default function SOPPage() {
   }
 
   return (
-    <div className="flex h-screen">
-      <Sidebar />
+    <div className="min-h-screen flex flex-col">
 
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Header */}
         <header className="bg-white px-8 py-5 flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-extrabold text-gray-900 tracking-tight flex items-center gap-3">
-              <div className="w-12 h-12 bg-pink-500 rounded-lg flex items-center justify-center">
-                <GraduationCap className="w-6 h-6 text-white" strokeWidth={2} />
-              </div>
-              SOP 训练
-            </h1>
-            <p className="text-sm text-gray-500 mt-1 ml-15">
-              {isMentor ? '管理导师布置的训练任务' : '查看分配给你的训练任务'} | 共 {total} 个任务
-            </p>
+          <div className="flex items-center gap-4">
+            <Link
+              href="/employee-qa"
+              className="flex items-center justify-center w-10 h-10 bg-gray-100 rounded-lg
+                         text-gray-600 hover:bg-gray-200 hover:text-gray-900
+                         transition-all duration-200"
+              title="返回员工问答"
+            >
+              <ArrowLeft className="w-5 h-5" strokeWidth={2} />
+            </Link>
+            <div>
+              <h1 className="text-2xl font-extrabold text-gray-900 tracking-tight flex items-center gap-3">
+                <div className="w-12 h-12 bg-pink-500 rounded-lg flex items-center justify-center">
+                  <GraduationCap className="w-6 h-6 text-white" strokeWidth={2} />
+                </div>
+                SOP 训练
+              </h1>
+              <p className="text-sm text-gray-500 mt-1 ml-15">
+                {isMentor ? '管理导师布置的训练任务' : '查看分配给你的训练任务'} | 共 {total} 个任务
+              </p>
+            </div>
           </div>
           <div className="flex items-center gap-4">
             {isMentor && (
@@ -142,7 +143,6 @@ export default function SOPPage() {
                 布置训练任务
               </Link>
             )}
-            <UserSwitcher />
           </div>
         </header>
 

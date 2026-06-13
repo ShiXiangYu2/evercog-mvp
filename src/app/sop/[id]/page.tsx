@@ -3,8 +3,7 @@
 import { useState, useEffect, useCallback, use } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import Sidebar from '@/components/Sidebar'
-import UserSwitcher from '@/components/UserSwitcher'
+import { useAuth } from '@/components/AuthProvider'
 import {
   ArrowLeft,
   GraduationCap,
@@ -105,14 +104,16 @@ function getScoreBg(score: number): string {
 export default function SOPDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
   const router = useRouter()
+  const { user: authUser } = useAuth()
 
   const [task, setTask] = useState<TaskData | null>(null)
   const [loading, setLoading] = useState(true)
-  const [currentUser, setCurrentUser] = useState<{ id: string; name: string; role: string } | null>(null)
   const [selectedSubmission, setSelectedSubmission] = useState<SubmissionData | null>(null)
   const [reviewComment, setReviewComment] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [showKnowledgeModal, setShowKnowledgeModal] = useState(false)
+
+  const currentUser = authUser ? { id: authUser.id, name: authUser.name, role: authUser.role } : null
 
   const fetchTask = useCallback(async () => {
     try {
@@ -137,12 +138,6 @@ export default function SOPDetailPage({ params }: { params: Promise<{ id: string
 
   useEffect(() => {
     fetchTask()
-    const userId = localStorage.getItem('currentUserId') || '5'
-    const roleMap: Record<string, string> = {
-      '1': 'sales', '2': 'customer_service', '3': 'operations',
-      '4': 'finance', '5': 'mentor', '6': 'trainee', '7': 'admin', '8': 'ai_info',
-    }
-    setCurrentUser({ id: userId, name: '', role: roleMap[userId] || 'mentor' })
   }, [fetchTask])
 
   const handleReview = async (action: 'approve' | 'reject' | 'revision_required') => {
@@ -230,8 +225,7 @@ export default function SOPDetailPage({ params }: { params: Promise<{ id: string
 
   if (loading) {
     return (
-      <div className="flex h-screen">
-        <Sidebar />
+      <div className="min-h-screen flex flex-col">
         <div className="flex-1 flex items-center justify-center">
           <div className="w-8 h-8 border-4 border-pink-500 border-t-transparent rounded-full animate-spin" />
         </div>
@@ -248,10 +242,8 @@ export default function SOPDetailPage({ params }: { params: Promise<{ id: string
   const canReview = isMentor && selectedSubmission && ['submitted', 'reviewing'].includes(selectedSubmission.status)
 
   return (
-    <div className="flex h-screen">
-      <Sidebar />
+    <div className="min-h-screen flex flex-col">
 
-      <div className="flex-1 flex flex-col overflow-hidden">
         {/* Header */}
         <header className="bg-white px-8 py-5 flex items-center justify-between">
           <div className="flex items-center gap-4">
@@ -286,7 +278,6 @@ export default function SOPDetailPage({ params }: { params: Promise<{ id: string
                 提交 SOP
               </Link>
             )}
-            <UserSwitcher />
           </div>
         </header>
 
@@ -641,7 +632,6 @@ export default function SOPDetailPage({ params }: { params: Promise<{ id: string
             </div>
           </div>
         </main>
-      </div>
 
       {/* Knowledge Modal */}
       {showKnowledgeModal && (

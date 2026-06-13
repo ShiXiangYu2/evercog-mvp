@@ -11,6 +11,8 @@ export const GET = withAuth(async () => {
       pendingSOPSubmissions,
       // 待审核的政策简报
       pendingPolicyBriefs,
+      // 待补充的知识缺口
+      pendingKnowledgeGaps,
       // Agent 任务（用于 Agent 预审）
       agentTasks,
       // 审计日志（用于统计）
@@ -44,6 +46,15 @@ export const GET = withAuth(async () => {
           generator: { select: { name: true, department: { select: { name: true } } } },
           policyLink: { select: { title: true } },
         },
+      }),
+      // 待补充的知识缺口
+      prisma.knowledgeGap.findMany({
+        where: { status: { in: ['pending', 'in_progress'] } },
+        take: 10,
+        orderBy: [
+          { priority: 'asc' },
+          { frequency: 'desc' },
+        ],
       }),
       // Agent 任务
       prisma.agentTask.findMany({
@@ -135,12 +146,25 @@ export const GET = withAuth(async () => {
         }
       })
 
+    // 构建知识缺口列表
+    const knowledgeGaps = pendingKnowledgeGaps.map((gap) => ({
+      id: gap.id,
+      question: gap.question,
+      topic: gap.topic,
+      frequency: gap.frequency,
+      priority: gap.priority,
+      status: gap.status,
+      suggestedAction: gap.suggestedAction,
+      createdAt: gap.createdAt,
+    }))
+
     // 构建导师工作台
     const mentorWorkspace = {
       myPendingTasks: pendingReviews.length,
       thisWeekProcessed: reviewStats.thisWeekProcessed,
       avgResponseTime: reviewStats.avgResponseTime,
       unassignedTasks: Math.max(0, pendingReviews.length - 3), // 模拟数据
+      pendingGaps: knowledgeGaps.length,
     }
 
     return NextResponse.json({
@@ -148,6 +172,7 @@ export const GET = withAuth(async () => {
       reviewStats,
       agentPreviews,
       mentorWorkspace,
+      knowledgeGaps,
     })
   } catch (error) {
     console.error('Failed to fetch mentor review data:', error)

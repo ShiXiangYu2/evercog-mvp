@@ -2,8 +2,6 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
-import Sidebar from '@/components/Sidebar'
-import UserSwitcher from '@/components/UserSwitcher'
 import {
   FileText,
   Search,
@@ -14,6 +12,7 @@ import {
   Loader2,
   ExternalLink,
   PenLine,
+  ArrowLeft,
 } from 'lucide-react'
 
 interface PolicyBrief {
@@ -82,16 +81,24 @@ export default function PolicyBriefsPage() {
   }
 
   return (
-    <div className="flex h-screen">
-      <Sidebar />
-      <div className="flex-1 flex flex-col overflow-hidden">
+    <div className="min-h-screen flex flex-col">
         {/* Header */}
         <header className="bg-white px-8 py-5 flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-extrabold text-gray-900 tracking-tight">政策简报</h1>
-            <p className="text-sm text-gray-500 mt-1 font-medium">查看和管理所有政策简报</p>
+          <div className="flex items-center gap-4">
+            <Link
+              href="/policy-intelligence"
+              className="flex items-center justify-center w-10 h-10 bg-gray-100 rounded-lg
+                         text-gray-600 hover:bg-gray-200 hover:text-gray-900
+                         transition-all duration-200"
+              title="返回政策情报"
+            >
+              <ArrowLeft className="w-5 h-5" strokeWidth={2} />
+            </Link>
+            <div>
+              <h1 className="text-2xl font-extrabold text-gray-900 tracking-tight">政策简报</h1>
+              <p className="text-sm text-gray-500 mt-1 font-medium">查看和管理所有政策简报</p>
+            </div>
           </div>
-          <UserSwitcher />
         </header>
 
         {/* Main Content */}
@@ -229,7 +236,6 @@ export default function PolicyBriefsPage() {
             </div>
           )}
         </main>
-      </div>
     </div>
   )
 }

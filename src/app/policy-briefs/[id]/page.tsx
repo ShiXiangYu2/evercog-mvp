@@ -3,8 +3,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
-import Sidebar from '@/components/Sidebar'
-import UserSwitcher from '@/components/UserSwitcher'
 import {
   ArrowLeft,
   FileText,
@@ -189,8 +187,7 @@ export default function PolicyBriefDetailPage() {
 
   if (loading) {
     return (
-      <div className="flex h-screen">
-        <Sidebar />
+      <div className="min-h-screen flex flex-col">
         <div className="flex-1 flex items-center justify-center">
           <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
         </div>
@@ -200,8 +197,7 @@ export default function PolicyBriefDetailPage() {
 
   if (!brief) {
     return (
-      <div className="flex h-screen">
-        <Sidebar />
+      <div className="min-h-screen flex flex-col">
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
             <p className="text-gray-500 text-lg font-medium">简报不存在</p>
@@ -218,9 +214,7 @@ export default function PolicyBriefDetailPage() {
   const StatusIcon = rs.icon
 
   return (
-    <div className="flex h-screen">
-      <Sidebar />
-      <div className="flex-1 flex flex-col overflow-hidden">
+    <div className="min-h-screen flex flex-col">
         {/* Header */}
         <header className="bg-white px-8 py-5 flex items-center justify-between">
           <div>
@@ -304,7 +298,6 @@ export default function PolicyBriefDetailPage() {
                 推送此简报
               </Link>
             )}
-            <UserSwitcher />
           </div>
         </header>
 
@@ -530,7 +523,6 @@ export default function PolicyBriefDetailPage() {
             </div>
           </div>
         </main>
-      </div>
     </div>
   )
 }

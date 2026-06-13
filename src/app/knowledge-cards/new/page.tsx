@@ -1,10 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import Sidebar from '@/components/Sidebar'
-import UserSwitcher from '@/components/UserSwitcher'
 import {
   ArrowLeft,
   Save,
@@ -59,6 +57,18 @@ export default function NewKnowledgeCardPage() {
   useEffect(() => {
     const userId = localStorage.getItem('currentUserId') || '4' // default to finance user
     setCurrentUser({ id: userId, name: '' })
+
+    // 支持从知识缺口跳转过来时预填问题
+    const params = new URLSearchParams(window.location.search)
+    const question = params.get('question')
+    if (question) {
+      setForm((prev) => ({
+        ...prev,
+        title: question,
+        content: `## ${question}\n\n### 解决方案\n\n（请补充具体内容）\n\n### 相关案例\n\n（请补充实际案例）\n\n### 注意事项\n\n（请补充注意事项）`,
+        category: 'faq',
+      }))
+    }
   }, [])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
@@ -144,10 +154,8 @@ export default function NewKnowledgeCardPage() {
   }
 
   return (
-    <div className="flex h-screen">
-      <Sidebar />
+    <div className="min-h-screen flex flex-col">
 
-      <div className="flex-1 flex flex-col overflow-hidden">
         {/* Header */}
         <header className="bg-white px-8 py-5 flex items-center justify-between">
           <div className="flex items-center gap-4">
@@ -167,7 +175,6 @@ export default function NewKnowledgeCardPage() {
               </h1>
             </div>
           </div>
-          <UserSwitcher />
         </header>
 
         {/* Form */}
@@ -389,6 +396,5 @@ export default function NewKnowledgeCardPage() {
           </form>
         </main>
       </div>
-    </div>
   )
 }

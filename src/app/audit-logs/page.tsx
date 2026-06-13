@@ -1,8 +1,6 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import Sidebar from '@/components/Sidebar'
-import UserSwitcher from '@/components/UserSwitcher'
 import {
   ScrollText,
   Filter,
@@ -239,8 +237,7 @@ export default function AuditLogsPage() {
   const grouped = groupByDate(logs)
 
   return (
-    <div className="flex h-screen">
-      <Sidebar />
+    <div className="min-h-screen flex flex-col">
 
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Header */}
@@ -256,7 +253,6 @@ export default function AuditLogsPage() {
               共 {total} 条操作记录
             </p>
           </div>
-          <UserSwitcher />
         </header>
 
         {/* Main Content */}

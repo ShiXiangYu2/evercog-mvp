@@ -3,8 +3,6 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import Sidebar from '@/components/Sidebar'
-import UserSwitcher from '@/components/UserSwitcher'
 import {
   ArrowLeft,
   Save,
@@ -93,9 +91,7 @@ export default function NewPolicyLinkPage() {
   }
 
   return (
-    <div className="flex h-screen">
-      <Sidebar />
-      <div className="flex-1 flex flex-col overflow-hidden">
+    <div className="min-h-screen flex flex-col">
         {/* Header */}
         <header className="bg-white px-8 py-5 flex items-center justify-between">
           <div>
@@ -111,7 +107,6 @@ export default function NewPolicyLinkPage() {
             <h1 className="text-2xl font-extrabold text-gray-900 tracking-tight">新增政策链接</h1>
             <p className="text-sm text-gray-500 mt-1 font-medium">提交一个新的政策链接到链接池</p>
           </div>
-          <UserSwitcher />
         </header>
 
         {/* Main Content */}
@@ -239,7 +234,6 @@ export default function NewPolicyLinkPage() {
             </form>
           </div>
         </main>
-      </div>
     </div>
   )
 }

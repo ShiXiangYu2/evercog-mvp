@@ -290,7 +290,7 @@ export class GapDetector {
   }
 
   /**
-   * 保存缺口记录
+   * 保存缺口记录，并为高优先级缺口自动创建 Agent 任务
    */
   private async saveGaps(gaps: GapItem[]): Promise<void> {
     for (const gap of gaps) {
@@ -302,9 +302,10 @@ export class GapDetector {
         },
       })
 
+      let gapRecord
       if (existing) {
         // 更新现有缺口的频率
-        await prisma.knowledgeGap.update({
+        gapRecord = await prisma.knowledgeGap.update({
           where: { id: existing.id },
           data: {
             frequency: existing.frequency + gap.frequency,
@@ -313,7 +314,7 @@ export class GapDetector {
         })
       } else {
         // 创建新的缺口记录
-        await prisma.knowledgeGap.create({
+        gapRecord = await prisma.knowledgeGap.create({
           data: {
             question: gap.question,
             topic: gap.topic,
@@ -323,6 +324,36 @@ export class GapDetector {
             suggestedAction: gap.suggestedAction,
           },
         })
+      }
+
+      // 高优先级缺口自动创建 Agent 任务（gap_fill）
+      if (gap.priority === 'high' && gapRecord) {
+        // 检查是否已有未完成的 gap_fill 任务关联此缺口
+        const existingTask = await prisma.agentTask.findFirst({
+          where: {
+            type: 'gap_fill',
+            status: { in: ['pending', 'in_progress'] },
+            description: { contains: gapRecord.id },
+          },
+        })
+
+        if (!existingTask) {
+          await prisma.agentTask.create({
+            data: {
+              type: 'gap_fill',
+              title: `知识缺口补充「${gap.question.substring(0, 30)}」`,
+              description: `gap_id: ${gapRecord.id} | question: ${gap.question} | topic: ${gap.topic || '未分类'} | frequency: ${gap.frequency}`,
+              priority: 'high',
+              status: 'pending',
+              createdBy: 'system',
+            },
+          })
+
+          logger.info('Auto-created gap_fill task', {
+            gapId: gapRecord.id,
+            question: gap.question.substring(0, 50),
+          })
+        }
       }
     }
   }

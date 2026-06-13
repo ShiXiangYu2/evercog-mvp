@@ -3,8 +3,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
-import Sidebar from '@/components/Sidebar'
-import UserSwitcher from '@/components/UserSwitcher'
 import { PolicyContextCard } from '@/components/PolicyContextCard'
 import {
   ArrowLeft,
@@ -134,8 +132,7 @@ export default function PolicyLinkDetailPage() {
 
   if (loading) {
     return (
-      <div className="flex h-screen">
-        <Sidebar />
+      <div className="min-h-screen flex flex-col">
         <div className="flex-1 flex items-center justify-center">
           <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
         </div>
@@ -145,8 +142,7 @@ export default function PolicyLinkDetailPage() {
 
   if (!link) {
     return (
-      <div className="flex h-screen">
-        <Sidebar />
+      <div className="min-h-screen flex flex-col">
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
             <p className="text-gray-500 text-lg font-medium">政策链接不存在</p>
@@ -164,9 +160,7 @@ export default function PolicyLinkDetailPage() {
   const canGenerateBrief = !link.brief && ['submitted', 'collected'].includes(link.status)
 
   return (
-    <div className="flex h-screen">
-      <Sidebar />
-      <div className="flex-1 flex flex-col overflow-hidden">
+    <div className="min-h-screen flex flex-col">
         {/* Header */}
         <header className="bg-white px-8 py-5 flex items-center justify-between">
           <div>
@@ -194,7 +188,6 @@ export default function PolicyLinkDetailPage() {
               )}
             </div>
           </div>
-          <UserSwitcher />
         </header>
 
         {/* Main Content */}
@@ -407,6 +400,5 @@ export default function PolicyLinkDetailPage() {
           </div>
         </main>
       </div>
-    </div>
   )
 }

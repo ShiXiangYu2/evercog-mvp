@@ -108,7 +108,7 @@ export const reviewSOPSchema = z.object({
   submissionId: z.string().min(1, '提交 ID 不能为空'),
   reviewerId: z.string().min(1, '审核人不能为空'),
   action: z.enum(['approve', 'reject', 'revision_required']),
-  comment: z.string().max(2000).optional(),
+  comment: z.string().max(2000).nullable().optional(),
 })
 
 // ==================== 推送记录 ====================

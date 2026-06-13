@@ -3,8 +3,6 @@
 import { useState, useEffect, useCallback, use } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import Sidebar from '@/components/Sidebar'
-import UserSwitcher from '@/components/UserSwitcher'
 import {
   ArrowLeft,
   Edit3,
@@ -298,8 +296,7 @@ export default function KnowledgeCardDetailPage({ params }: { params: Promise<{ 
 
   if (loading) {
     return (
-      <div className="flex h-screen">
-        <Sidebar />
+      <div className="min-h-screen flex flex-col">
         <div className="flex-1 flex items-center justify-center">
           <div className="w-8 h-8 border-4 border-purple-500 border-t-transparent rounded-full animate-spin" />
         </div>
@@ -316,10 +313,8 @@ export default function KnowledgeCardDetailPage({ params }: { params: Promise<{ 
   const canReview = currentUser && (currentUser.role === 'admin' || currentUser.role === 'mentor')
 
   return (
-    <div className="flex h-screen">
-      <Sidebar />
+    <div className="min-h-screen flex flex-col">
 
-      <div className="flex-1 flex flex-col overflow-hidden">
         {/* Header */}
         <header className="bg-white px-8 py-5 flex items-center justify-between">
           <div className="flex items-center gap-4">
@@ -345,7 +340,6 @@ export default function KnowledgeCardDetailPage({ params }: { params: Promise<{ 
               </div>
             </div>
           </div>
-          <UserSwitcher />
         </header>
 
         {/* Content */}
@@ -736,6 +730,5 @@ export default function KnowledgeCardDetailPage({ params }: { params: Promise<{ 
           </div>
         </main>
       </div>
-    </div>
   )
 }

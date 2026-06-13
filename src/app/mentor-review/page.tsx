@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { useAuth } from '@/components/AuthProvider'
 import {
   ClipboardCheck,
   FileText,
@@ -13,6 +14,8 @@ import {
   ArrowRight,
   Bot,
   RefreshCw,
+  GraduationCap,
+  Shield,
 } from 'lucide-react'
 
 interface MentorReviewData {
@@ -44,12 +47,46 @@ interface MentorReviewData {
     thisWeekProcessed: number
     avgResponseTime: number
     unassignedTasks: number
+    pendingGaps: number
   }
+  knowledgeGaps: Array<{
+    id: string
+    question: string
+    topic: string | null
+    frequency: number
+    priority: string
+    status: string
+    suggestedAction: string | null
+    createdAt: Date
+  }>
 }
 
 export default function MentorReviewPage() {
+  const { user: authUser } = useAuth()
   const [data, setData] = useState<MentorReviewData | null>(null)
   const [loading, setLoading] = useState(true)
+
+  // 权限检查：只允许导师/管理员访问
+  const isMentor = authUser?.role === 'mentor' || authUser?.role === 'admin'
+
+  if (authUser && !isMentor) {
+    return (
+      <div className="p-8">
+        <div className="bg-red-50 border-2 border-red-200 rounded-xl p-8 text-center">
+          <Shield className="w-12 h-12 text-red-400 mx-auto mb-4" />
+          <h2 className="text-lg font-bold text-red-800 mb-2">无权访问</h2>
+          <p className="text-sm text-red-600 mb-4">导师审核页面仅对导师和管理员开放</p>
+          <Link
+            href="/"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded-lg
+                       font-semibold text-sm hover:bg-red-600 transition-colors"
+          >
+            返回首页
+          </Link>
+        </div>
+      </div>
+    )
+  }
   const [selectedReview, setSelectedReview] = useState<string | null>(null)
   const [selectedReviewType, setSelectedReviewType] = useState<string | null>(null)
   const [showReviewModal, setShowReviewModal] = useState(false)
@@ -102,11 +139,13 @@ export default function MentorReviewPage() {
     rejectedThenResubmitted: 6,
   }
   const agentPreviews = data?.agentPreviews || defaultAgentPreviews
+  const knowledgeGaps = data?.knowledgeGaps || []
   const mentorWorkspace = data?.mentorWorkspace || {
     myPendingTasks: 5,
     thisWeekProcessed: 18,
     avgResponseTime: 2.1,
     unassignedTasks: 3,
+    pendingGaps: knowledgeGaps.length,
   }
 
   // 计算等待时长
@@ -123,9 +162,20 @@ export default function MentorReviewPage() {
   return (
     <div className="p-8">
       {/* 页面标题 */}
-      <div className="mb-8">
-        <h1 className="text-2xl font-extrabold text-gray-900">导师审核</h1>
-        <p className="text-sm text-gray-500 mt-1">AI 预审 + 导师复核，保障知识质量与专业性，让知识更可信。</p>
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <h1 className="text-2xl font-extrabold text-gray-900">导师审核</h1>
+          <p className="text-sm text-gray-500 mt-1">AI 预审 + 导师复核，保障知识质量与专业性，让知识更可信。</p>
+        </div>
+        <Link
+          href="/sop"
+          className="flex items-center gap-2 px-5 py-3 bg-pink-500 text-white rounded-lg
+                     font-semibold text-sm transition-all duration-200 hover:scale-[1.02]
+                     border-4 border-pink-600"
+        >
+          <GraduationCap className="w-5 h-5" strokeWidth={2} />
+          SOP 训练
+        </Link>
       </div>
 
       {/* 主要内容区 */}
@@ -299,11 +349,54 @@ export default function MentorReviewPage() {
         </div>
       </div>
 
+      {/* 知识缺口 - Agent 自动处理 */}
+      {knowledgeGaps.length > 0 && (
+        <div className="bg-white rounded-xl p-6 border border-gray-100 mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+              <span className="w-6 h-6 bg-red-500 rounded-md flex items-center justify-center text-white text-xs font-bold">④</span>
+              知识缺口
+              <span className="px-2 py-0.5 text-xs font-medium bg-red-100 text-red-700 rounded">{knowledgeGaps.length} 个待处理</span>
+            </h2>
+            <Link href="/knowledge-gaps" className="text-sm text-[#10B981] font-medium hover:underline">查看全部 →</Link>
+          </div>
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+            <div className="flex items-center gap-2">
+              <Bot className="w-5 h-5 text-blue-600" />
+              <p className="text-sm text-blue-800">
+                <span className="font-semibold">Agent 自动处理：</span>
+                高优先级缺口已由 Agent 自动生成知识卡草稿，等待您审核。您可以在上方待审核队列中查看。
+              </p>
+            </div>
+          </div>
+          <div className="space-y-2">
+            {knowledgeGaps.slice(0, 3).map((gap) => (
+              <div key={gap.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                <span className={`w-2 h-2 rounded-full flex-shrink-0 ${
+                  gap.priority === 'high' ? 'bg-red-500' :
+                  gap.priority === 'medium' ? 'bg-amber-500' : 'bg-gray-400'
+                }`} />
+                <span className="text-sm text-gray-700 flex-1 truncate">{gap.question}</span>
+                <span className="text-xs text-gray-400">被问 {gap.frequency} 次</span>
+                <span className={`px-2 py-0.5 text-xs font-medium rounded ${
+                  gap.status === 'in_progress' ? 'bg-blue-100 text-blue-700' :
+                  gap.status === 'resolved' ? 'bg-green-100 text-green-700' :
+                  'bg-amber-100 text-amber-700'
+                }`}>
+                  {gap.status === 'in_progress' ? 'Agent 处理中' :
+                   gap.status === 'resolved' ? '已解决' : '待处理'}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* 导师工作台 */}
       <div className="bg-white rounded-xl p-6 border border-gray-100">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-            <span className="w-6 h-6 bg-[#10B981] rounded-md flex items-center justify-center text-white text-xs font-bold">④</span>
+            <span className="w-6 h-6 bg-[#10B981] rounded-md flex items-center justify-center text-white text-xs font-bold">⑤</span>
             导师工作台
           </h2>
           <Link href="/agent-workspace" className="px-4 py-2 text-sm font-medium text-white bg-[#10B981] rounded-lg hover:bg-[#059669] transition-colors">

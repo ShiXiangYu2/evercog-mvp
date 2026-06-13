@@ -2,8 +2,6 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
-import Sidebar from '@/components/Sidebar'
-import UserSwitcher from '@/components/UserSwitcher'
 import {
   BookOpen,
   Plus,
@@ -11,7 +9,6 @@ import {
   Filter,
   Tag,
   ChevronDown,
-  Eye,
   Edit3,
   Clock,
   CheckCircle2,
@@ -22,7 +19,7 @@ import {
   HelpCircle,
   Shield,
   Briefcase,
-  FolderOpen,
+  ArrowLeft,
 } from 'lucide-react'
 
 interface KnowledgeCard {
@@ -186,34 +183,41 @@ export default function KnowledgeCardsPage() {
   }
 
   return (
-    <div className="flex h-screen">
-      <Sidebar />
-
-      <div className="flex-1 flex flex-col overflow-hidden">
+    <div className="min-h-screen flex flex-col">
         {/* Header */}
         <header className="bg-white px-8 py-5 flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-extrabold text-gray-900 tracking-tight flex items-center gap-3">
-              <div className="w-12 h-12 bg-purple-500 rounded-lg flex items-center justify-center">
-                <BookOpen className="w-6 h-6 text-white" strokeWidth={2} />
-              </div>
-              知识卡管理
-            </h1>
-            <p className="text-sm text-gray-500 mt-1 ml-15">
-              共 {total} 张知识卡
-            </p>
+          <div className="flex items-center gap-4">
+            <Link
+              href="/knowledge-hub"
+              className="flex items-center justify-center w-10 h-10 bg-gray-100 rounded-lg
+                         text-gray-600 hover:bg-gray-200 hover:text-gray-900
+                         transition-all duration-200"
+              title="返回知识中台"
+            >
+              <ArrowLeft className="w-5 h-5" strokeWidth={2} />
+            </Link>
+            <div>
+              <h1 className="text-2xl font-extrabold text-gray-900 tracking-tight flex items-center gap-3">
+                <div className="w-12 h-12 bg-[#10B981] rounded-lg flex items-center justify-center">
+                  <BookOpen className="w-6 h-6 text-white" strokeWidth={2} />
+                </div>
+                知识卡管理
+              </h1>
+              <p className="text-sm text-gray-500 mt-1 ml-15">
+                共 {total} 张知识卡
+              </p>
+            </div>
           </div>
           <div className="flex items-center gap-4">
             <Link
               href="/knowledge-cards/new"
-              className="flex items-center gap-2 px-6 py-3 bg-purple-500 text-white rounded-lg
+              className="flex items-center gap-2 px-6 py-3 bg-[#10B981] text-white rounded-lg
                          font-semibold text-sm transition-all duration-200 hover:scale-[1.02]
-                         border-4 border-purple-600"
+                         border-4 border-[#059669]"
             >
               <Plus className="w-5 h-5" strokeWidth={2.5} />
               新建知识卡
             </Link>
-            <UserSwitcher />
           </div>
         </header>
 
@@ -469,7 +473,6 @@ export default function KnowledgeCardsPage() {
             </>
           )}
         </main>
-      </div>
     </div>
   )
 }

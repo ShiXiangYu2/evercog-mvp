@@ -2,8 +2,6 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
-import Sidebar from '@/components/Sidebar'
-import UserSwitcher from '@/components/UserSwitcher'
 import {
   Link2,
   Plus,
@@ -92,9 +90,7 @@ export default function PolicyLinksPage() {
   }
 
   return (
-    <div className="flex h-screen">
-      <Sidebar />
-      <div className="flex-1 flex flex-col overflow-hidden">
+    <div className="min-h-screen flex flex-col">
         {/* Header */}
         <header className="bg-white px-8 py-5 flex items-center justify-between">
           <div className="flex items-center gap-4">
@@ -121,7 +117,6 @@ export default function PolicyLinksPage() {
               <Plus className="w-5 h-5" strokeWidth={2.5} />
               新增政策链接
             </Link>
-            <UserSwitcher />
           </div>
         </header>
 
@@ -282,7 +277,6 @@ export default function PolicyLinksPage() {
             </div>
           )}
         </main>
-      </div>
     </div>
   )
 }

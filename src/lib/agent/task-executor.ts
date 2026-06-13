@@ -325,36 +325,141 @@ export class TaskExecutor {
 
   /**
    * 执行知识缺口填充任务
+   *
+   * Agent 根据缺口信息自动生成知识卡草稿，提交导师审核
    */
   private async executeGapFill(task: {
     id: string
     title?: string
     description: string | null
-  }): Promise<{ filled: boolean; cardId?: string }> {
+  }): Promise<{ filled: boolean; cardId?: string; gapId?: string }> {
     logger.info('Executing knowledge gap fill', { taskId: task.id })
 
     // 从任务描述中提取缺口信息
-    const gapTitleMatch = task.title?.match(/[「【](.+?)[」】]/)
-    const gapTitle = gapTitleMatch ? gapTitleMatch[1] : task.title || '未知缺口'
+    // description 格式: "gap_id: xxx | question: xxx | topic: xxx | frequency: xxx"
+    const gapIdMatch = task.description?.match(/gap_id:\s*([a-z0-9-]+)/i)
+    const questionMatch = task.description?.match(/question:\s*(.+?)(?:\s*\||$)/i)
+    const topicMatch = task.description?.match(/topic:\s*(.+?)(?:\s*\||$)/i)
+    const frequencyMatch = task.description?.match(/frequency:\s*(\d+)/i)
 
-    // 创建知识卡草稿
+    const gapId = gapIdMatch?.[1]
+    const question = questionMatch?.[1]?.trim() || task.title || '未知问题'
+    const topic = topicMatch?.[1]?.trim() || '未分类'
+    const frequency = frequencyMatch ? parseInt(frequencyMatch[1]) : 1
+
+    // 从标题中提取简洁的问题描述
+    const gapTitleMatch = task.title?.match(/[「【](.+?)[」】]/)
+    const gapTitle = gapTitleMatch?.[1] || question
+
+    // 根据主题确定分类
+    const categoryMap: Record<string, string> = {
+      '代账服务': 'faq',
+      '税务相关': 'tax_process',
+      '资料清单': 'data_checklist',
+      '风险合规': 'risk_reminder',
+      '政策解读': 'faq',
+      '销售技巧': 'experience',
+      '客户服务': 'experience',
+    }
+    const category = categoryMap[topic] || 'faq'
+
+    // 生成知识卡内容
+    const content = this.generateGapFillContent(gapTitle, question, topic, frequency)
+
+    // 创建知识卡，状态为 pending_review（等待导师审核）
     const card = await prisma.knowledgeCard.create({
       data: {
-        title: `${gapTitle} - 知识缺口补充`,
-        category: 'faq',
-        content: `# ${gapTitle}\n\n## 问题描述\n${task.description || '暂无描述'}\n\n## 解决方案\n待补充\n\n## 相关案例\n待补充`,
-        status: 'draft',
+        title: gapTitle,
+        category,
+        content,
+        source: `知识缺口自动补充 | gap_id: ${gapId || 'unknown'} | 被问 ${frequency} 次`,
+        status: 'pending_review',
         visibilityScope: 'department',
         creatorId: 'system',
+        tags: JSON.stringify([topic, '自动补充']),
       },
     })
 
-    logger.info('Knowledge card created for gap', { cardId: card.id, gapTitle })
+    // 更新缺口状态为 in_progress（已由 Agent 处理，等待审核）
+    if (gapId) {
+      await prisma.knowledgeGap.update({
+        where: { id: gapId },
+        data: { status: 'in_progress' },
+      }).catch((err) => {
+        logger.warn('Failed to update gap status', { gapId, error: err.message })
+      })
+    }
+
+    logger.info('Knowledge card created for gap', {
+      cardId: card.id,
+      gapId,
+      gapTitle,
+      category,
+    })
 
     return {
       filled: true,
       cardId: card.id,
+      gapId,
     }
+  }
+
+  /**
+   * 生成缺口填充内容
+   */
+  private generateGapFillContent(
+    gapTitle: string,
+    question: string,
+    topic: string,
+    frequency: number
+  ): string {
+    return `# ${gapTitle}
+
+## 问题背景
+
+**问题来源**：员工问答中被问及 ${frequency} 次，属于高频问题。
+**主题分类**：${topic}
+**原始问题**：${question}
+
+## 标准回答
+
+> ⚠️ 以下为 Agent 自动生成的框架，请导师根据实际情况补充完善。
+
+### 适用场景
+
+（请描述此问题的典型适用场景）
+
+### 标准操作流程
+
+1. 第一步：确认客户类型和具体需求
+2. 第二步：查询相关政策法规
+3. 第三步：准备所需材料清单
+4. 第四步：指导客户完成操作
+5. 第五步：跟进反馈
+
+### 所需材料
+
+| 序号 | 材料名称 | 说明 | 备注 |
+|------|----------|------|------|
+| 1 | - | - | - |
+
+### 注意事项
+
+- 注意时效性，政策可能随时更新
+- 确保信息准确性，建议与最新政策文件核对
+- 如遇特殊情况，及时向上级或导师咨询
+
+### 相关政策依据
+
+（请补充相关政策文件名称和条款编号）
+
+### 常见误区
+
+（请补充常见错误做法和正确做法对比）
+
+---
+
+*此知识卡由 Agent 基于知识缺口自动生成，待导师审核完善后发布。*`
   }
 
   /**

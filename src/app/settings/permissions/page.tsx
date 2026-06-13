@@ -1,8 +1,6 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import Sidebar from '@/components/Sidebar'
-import UserSwitcher from '@/components/UserSwitcher'
 import {
   Shield,
   Check,
@@ -116,8 +114,7 @@ export default function PermissionsPage() {
     )
 
   return (
-    <div className="flex h-screen">
-      <Sidebar />
+    <div className="min-h-screen flex flex-col">
 
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Header */}
@@ -133,7 +130,6 @@ export default function PermissionsPage() {
               查看各角色的权限配置和访问范围
             </p>
           </div>
-          <UserSwitcher />
         </header>
 
         {/* Main Content */}
