@@ -4,6 +4,25 @@
  * 拆分为聚焦接口，每个接口负责单一能力
  */
 
+// ==================== PolicyContext ====================
+
+/** 政策上下文信息 */
+export interface PolicyContext {
+  validFrom?: string        // 生效日期
+  validTo?: string          // 截止日期
+  status: 'active' | 'expiring' | 'expired'  // 状态
+  applicableRegions: string[]  // 适用地区
+  applicableEntities: string[] // 适用主体
+  clauseNumbers: string[]      // 条款编号
+}
+
+/** 适用性判断结果 */
+export interface ApplicabilityResult {
+  status: 'applicable' | 'partial' | 'not_applicable'
+  reason: string
+  missingConditions?: string[]
+}
+
 // ==================== BriefGenerator ====================
 
 /** 政策简报生成输入 */
@@ -43,6 +62,15 @@ export interface ExperienceReplyInput {
     tags: string | null
     source: string | null
     riskNotes: string | null
+    reviewerName?: string
+    updatedAt?: string
+    status?: string
+    // 政策上下文字段
+    validFrom?: string
+    validTo?: string
+    applicableRegions?: string
+    applicableEntities?: string
+    clauseNumbers?: string
   }>
 }
 
@@ -57,7 +85,13 @@ export interface ExperienceReplyOutput {
     title: string
     category: string
     source: string
+    reviewerName?: string
+    updatedAt?: string
+    status?: string
   }>
+  // 政策上下文
+  policyContext?: PolicyContext
+  applicability?: ApplicabilityResult
 }
 
 /** 经验回复生成器接口 */

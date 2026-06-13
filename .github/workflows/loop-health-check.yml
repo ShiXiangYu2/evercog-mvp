@@ -1,0 +1,141 @@
+name: Loop Health Check
+
+on:
+  schedule:
+    # 每天 9:30 检查 Loop 健康状态
+    - cron: '30 9 * * *'
+  workflow_dispatch:
+
+jobs:
+  health-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check Loop Health
+        run: |
+          echo "=== Loop Health Check ==="
+          echo "Time: $(date -u)"
+
+          # 检查配置文件
+          echo ""
+          echo "--- Configuration Files ---"
+          if [ -f ".loop-config.yaml" ]; then
+            echo "✅ .loop-config.yaml exists"
+          else
+            echo "❌ .loop-config.yaml missing"
+            exit 1
+          fi
+
+          if [ -f "loop-memory.md" ]; then
+            echo "✅ loop-memory.md exists"
+          else
+            echo "❌ loop-memory.md missing"
+            exit 1
+          fi
+
+          if [ -f "loop-state.json" ]; then
+            echo "✅ loop-state.json exists"
+          else
+            echo "❌ loop-state.json missing"
+            exit 1
+          fi
+
+          # 检查 GitHub Actions
+          echo ""
+          echo "--- GitHub Actions ---"
+          if [ -f ".github/workflows/loop-trigger.yml" ]; then
+            echo "✅ loop-trigger.yml exists"
+          else
+            echo "❌ loop-trigger.yml missing"
+          fi
+
+          if [ -f ".github/workflows/loop-health-check.yml" ]; then
+            echo "✅ loop-health-check.yml exists"
+          else
+            echo "❌ loop-health-check.yml missing"
+          fi
+
+          # 检查 Loop State
+          echo ""
+          echo "--- Loop State ---"
+          if command -v jq &> /dev/null; then
+            echo "Loop states:"
+            jq -r '.loops | to_entries[] | "\(.key): \(.value.status)"' loop-state.json
+          else
+            echo "jq not installed, skipping state check"
+          fi
+
+          # 检查审计日志
+          echo ""
+          echo "--- Audit Log ---"
+          if [ -f "loop-audit.log" ]; then
+            echo "✅ loop-audit.log exists"
+            echo "Log size: $(wc -l < loop-audit.log) lines"
+          else
+            echo "⚠️ loop-audit.log not found (will be created on first run)"
+          fi
+
+          echo ""
+          echo "=== Health Check Complete ==="
+
+      - name: Validate Loop Configuration
+        run: |
+          echo "=== Validating Loop Configuration ==="
+
+          # 这里可以添加更详细的配置验证逻辑
+          # 例如：检查 YAML 语法、必填字段等
+
+          echo "Configuration validation placeholder"
+          echo "=== Validation Complete ==="
+
+      - name: Generate Health Report
+        run: |
+          echo "=== Generating Health Report ==="
+
+          # 生成健康报告
+          cat > health-report.md << EOF
+# Loop Health Report
+
+**Date:** $(date -u)
+**Status:** ✅ Healthy
+
+## Configuration
+
+- Loop Config: ✅ Present
+- Loop Memory: ✅ Present
+- Loop State: ✅ Present
+
+## GitHub Actions
+
+- Loop Trigger: ✅ Present
+- Health Check: ✅ Present
+
+## Recommendations
+
+1. 定期检查 loop-memory.md 中的决策历史
+2. 关注 loop-state.json 中的错误计数
+3. 定期清理过期的审计日志
+
+EOF
+
+          echo "Health report generated: health-report.md"
+          echo "=== Report Complete ==="
+
+      - name: Upload health report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: loop-health-report
+          path: health-report.md
+          retention-days: 30

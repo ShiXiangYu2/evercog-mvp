@@ -58,6 +58,11 @@ export class FeedbackService {
     // 更新统计信息
     await this.updateStats(targetType, targetId)
 
+    // 如果是"无帮助"反馈，创建优化任务
+    if (helpful === false && targetType === 'experience_query') {
+      await this.createOptimizationTask(targetId, comment)
+    }
+
     logger.info('Feedback created', {
       feedbackId: feedback.id,
       targetType,
@@ -66,6 +71,40 @@ export class FeedbackService {
     })
 
     return feedback
+  }
+
+  /**
+   * 创建优化任务
+   */
+  private async createOptimizationTask(queryId: string, comment?: string) {
+    try {
+      // 获取原始查询
+      const query = await prisma.experienceQuery.findUnique({
+        where: { id: queryId },
+      })
+
+      if (!query) return
+
+      // 创建优化任务
+      await prisma.optimizationTask.create({
+        data: {
+          sourceType: 'feedback',
+          sourceId: queryId,
+          question: query.question,
+          status: 'pending',
+          priority: 'medium',
+          reason: comment || '用户反馈"无帮助"',
+        },
+      })
+
+      logger.info('Optimization task created', {
+        queryId,
+        question: query.question.substring(0, 50),
+      })
+    } catch (error) {
+      // 优化任务创建失败不应影响反馈流程
+      logger.error('Failed to create optimization task', error as Error)
+    }
   }
 
   /**

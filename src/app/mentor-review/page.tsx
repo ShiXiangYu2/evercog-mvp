@@ -444,25 +444,20 @@ export default function MentorReviewPage() {
                         comment: reviewComment || undefined,
                       }
                     } else if (selectedReviewType === 'sop') {
-                      // SOP 审核暂用提示
-                      alert('SOP 审核功能已提交')
-                      setShowReviewModal(false)
-                      setSelectedReview(null)
-                      setSelectedReviewType(null)
-                      setReviewAction(null)
-                      setReviewComment('')
-                      setSubmitting(false)
-                      return
+                      // SOP 审核
+                      apiUrl = `/api/sop/tasks/${selectedReview}/review`
+                      body = {
+                        submissionId: selectedReview,
+                        action: reviewAction === 'approve' ? 'approve' : 'reject',
+                        comment: reviewComment || undefined,
+                      }
                     } else if (selectedReviewType === 'brief') {
-                      // 简报审核暂用提示
-                      alert('简报审核功能已提交')
-                      setShowReviewModal(false)
-                      setSelectedReview(null)
-                      setSelectedReviewType(null)
-                      setReviewAction(null)
-                      setReviewComment('')
-                      setSubmitting(false)
-                      return
+                      // 简报审核
+                      apiUrl = `/api/policy-briefs/${selectedReview}`
+                      body = {
+                        action: reviewAction === 'approve' ? 'approve' : 'reject',
+                        comment: reviewComment || undefined,
+                      }
                     }
 
                     const res = await fetch(apiUrl, {

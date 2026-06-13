@@ -3,7 +3,7 @@
  *
  * 生成经验回复的 Mock 实现
  */
-import type { ReplyGenerator, ExperienceReplyInput, ExperienceReplyOutput } from './types'
+import type { ReplyGenerator, ExperienceReplyInput, ExperienceReplyOutput, PolicyContext, ApplicabilityResult } from './types'
 
 export class MockReplyGenerator implements ReplyGenerator {
   name = 'mock-reply'
@@ -16,6 +16,9 @@ export class MockReplyGenerator implements ReplyGenerator {
       title: c.title,
       category: c.category,
       source: c.source || '内部知识库',
+      reviewerName: (c as any).reviewerName || '未知',
+      updatedAt: (c as any).updatedAt || new Date().toISOString(),
+      status: (c as any).status || 'published',
     }))
 
     const policyCards = retrievedCards.filter(
@@ -62,6 +65,86 @@ export class MockReplyGenerator implements ReplyGenerator {
       riskReminder = `**注意事项**：\n\n1. 请确保客户提供的资料真实、完整\n2. 注意相关服务的适用范围和条件\n3. 如遇复杂情况，建议咨询专业人士`
     }
 
-    return { policyExplanation, serviceOpportunity, salesScript, riskReminder, citedSources }
+    // 生成政策上下文
+    const policyContext = this.generatePolicyContext(retrievedCards)
+    const applicability = this.generateApplicability(retrievedCards)
+
+    return {
+      policyExplanation,
+      serviceOpportunity,
+      salesScript,
+      riskReminder,
+      citedSources,
+      policyContext,
+      applicability,
+    }
+  }
+
+  /**
+   * 生成政策上下文
+   */
+  private generatePolicyContext(cards: ExperienceReplyInput['retrievedCards']): PolicyContext | undefined {
+    if (cards.length === 0) return undefined
+
+    // 从第一张卡片提取政策上下文
+    const card = cards[0]
+
+    // 解析 JSON 字段
+    const parseJsonArray = (value: string | undefined): string[] => {
+      if (!value) return []
+      try {
+        return JSON.parse(value)
+      } catch {
+        return []
+      }
+    }
+
+    // 判断政策状态
+    const now = new Date()
+    const validTo = card.validTo ? new Date(card.validTo) : null
+    let status: PolicyContext['status'] = 'active'
+
+    if (validTo) {
+      if (validTo < now) {
+        status = 'expired'
+      } else if (validTo.getTime() - now.getTime() < 30 * 24 * 60 * 60 * 1000) {
+        status = 'expiring'
+      }
+    }
+
+    return {
+      validFrom: card.validFrom || '2024-01-01',
+      validTo: card.validTo || '2025-12-31',
+      status,
+      applicableRegions: parseJsonArray(card.applicableRegions) || ['全国'],
+      applicableEntities: parseJsonArray(card.applicableEntities) || ['小微企业', '个体工商户'],
+      clauseNumbers: parseJsonArray(card.clauseNumbers) || ['第一条', '第二款'],
+    }
+  }
+
+  /**
+   * 生成适用性判断
+   */
+  private generateApplicability(cards: ExperienceReplyInput['retrievedCards']): ApplicabilityResult | undefined {
+    if (cards.length === 0) return undefined
+
+    // 简单的适用性判断逻辑
+    const card = cards[0]
+    const riskNotes = card.riskNotes || ''
+
+    // 如果有风险提示，可能是部分适用
+    if (riskNotes.includes('需') || riskNotes.includes('条件')) {
+      return {
+        status: 'partial',
+        reason: '该政策需满足特定条件，请确认客户是否符合',
+        missingConditions: ['需确认企业规模', '需确认经营年限'],
+      }
+    }
+
+    // 默认适用
+    return {
+      status: 'applicable',
+      reason: '客户符合政策适用条件',
+    }
   }
 }

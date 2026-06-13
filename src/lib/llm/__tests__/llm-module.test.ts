@@ -80,6 +80,55 @@ describe('MockReplyGenerator', () => {
     expect(result.serviceOpportunity).toBeTruthy()
     expect(result.citedSources).toHaveLength(0)
   })
+
+  it('should generate policy context', async () => {
+    const result = await generator.generateExperienceReply({
+      question: '小微企业税收优惠政策',
+      retrievedCards: [
+        {
+          id: '1',
+          title: '小微企业税收优惠',
+          content: '符合条件的小微企业可享受税收优惠',
+          category: 'tax_process',
+          tags: null,
+          source: '国家税务总局',
+          riskNotes: null,
+          validFrom: '2024-01-01',
+          validTo: '2027-12-31',
+          applicableRegions: JSON.stringify(['全国']),
+          applicableEntities: JSON.stringify(['小微企业', '个体工商户']),
+          clauseNumbers: JSON.stringify(['第一条', '第二款']),
+        },
+      ],
+    })
+
+    expect(result.policyContext).toBeDefined()
+    expect(result.policyContext?.status).toBe('active')
+    expect(result.policyContext?.applicableRegions).toContain('全国')
+    expect(result.policyContext?.applicableEntities).toContain('小微企业')
+    expect(result.policyContext?.clauseNumbers).toContain('第一条')
+  })
+
+  it('should generate applicability result', async () => {
+    const result = await generator.generateExperienceReply({
+      question: '客户是否符合政策条件？',
+      retrievedCards: [
+        {
+          id: '1',
+          title: '政策适用条件',
+          content: '...',
+          category: 'experience',
+          tags: null,
+          source: '政策部门',
+          riskNotes: null,
+        },
+      ],
+    })
+
+    expect(result.applicability).toBeDefined()
+    expect(result.applicability?.status).toBeDefined()
+    expect(result.applicability?.reason).toBeTruthy()
+  })
 })
 
 describe('MockInspectionGenerator', () => {

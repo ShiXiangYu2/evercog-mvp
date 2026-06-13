@@ -1,0 +1,129 @@
+name: Loop Trigger
+
+on:
+  schedule:
+    # 知识卡质量巡检 - 每天 8:00
+    - cron: '0 8 * * *'
+    # 经验问答反馈 - 每周一 9:00
+    - cron: '0 9 * * 1'
+    # SOP 完成度监控 - 每天 18:00
+    - cron: '0 18 * * *'
+  workflow_dispatch:
+    inputs:
+      loop_name:
+        description: '要触发的 Loop 名称'
+        required: false
+        type: choice
+        options:
+          - 'all'
+          - 'knowledge-card-patrol'
+          - 'experience-feedback-loop'
+          - 'sop-completion-monitor'
+
+jobs:
+  detect-loop:
+    runs-on: ubuntu-latest
+    outputs:
+      loop_name: ${{ steps.detect.outputs.loop_name }}
+    steps:
+      - name: Detect which loop to run
+        id: detect
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "loop_name=${{ github.event.inputs.loop_name }}" >> $GITHUB_OUTPUT
+          else
+            # 根据当前时间判断应该运行哪个 Loop
+            HOUR=$(date -u +'%H')
+            DOW=$(date -u +'%u')
+
+            if [ "$HOUR" = "08" ]; then
+              echo "loop_name=knowledge-card-patrol" >> $GITHUB_OUTPUT
+            elif [ "$HOUR" = "09" ] && [ "$DOW" = "1" ]; then
+              echo "loop_name=experience-feedback-loop" >> $GITHUB_OUTPUT
+            elif [ "$HOUR" = "18" ]; then
+              echo "loop_name=sop-completion-monitor" >> $GITHUB_OUTPUT
+            else
+              echo "loop_name=none" >> $GITHUB_OUTPUT
+            fi
+          fi
+
+  run-loop:
+    needs: detect-loop
+    if: needs.detect-loop.outputs.loop_name != 'none'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Run Loop Runtime
+        run: |
+          LOOP_NAME="${{ needs.detect-loop.outputs.loop_name }}"
+          echo "Running loop: $LOOP_NAME"
+
+          # 创建临时状态文件
+          cp loop-state.json loop-state-runtime.json
+
+          # 运行 Loop Runtime
+          python .agent/skills/loop-engineering/scripts/run-loop.py \
+            --config .loop-config.yaml \
+            --state loop-state-runtime.json \
+            --audit-log loop-audit.log \
+            --loop-name "$LOOP_NAME" || true
+
+          # 更新状态文件
+          cp loop-state-runtime.json loop-state.json
+
+      - name: Update Loop Memory
+        run: |
+          # 这里可以添加更新 loop-memory.md 的逻辑
+          echo "Loop memory update placeholder"
+
+      - name: Upload audit log
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: loop-audit-log
+          path: loop-audit.log
+          retention-days: 90
+
+      - name: Upload loop state
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: loop-state
+          path: loop-state-runtime.json
+          retention-days: 30
+
+  notify:
+    needs: run-loop
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send notification
+        run: |
+          # 这里可以添加通知逻辑
+          # 例如：发送到企业微信、钉钉、Slack 等
+          echo "Notification placeholder"
+
+          # 检查 Loop 执行结果
+          if [ "${{ needs.run-loop.result }}" = "failure" ]; then
+            echo "Loop execution failed!"
+            # 发送失败通知
+          else
+            echo "Loop execution completed successfully!"
+            # 发送成功通知（可选）
+          fi

@@ -1,0 +1,94 @@
+{
+  "version": "1.0",
+  "project": "evercog-mvp",
+  "lastUpdated": "2026-06-13T00:00:00.000Z",
+  "loops": {
+    "knowledge-card-patrol": {
+      "status": "idle",
+      "lastRun": null,
+      "totalRuns": 0,
+      "totalItemsProcessed": 0,
+      "successRate": 0,
+      "averageProcessingTime": 0,
+      "lastError": null,
+      "consecutiveFailures": 0
+    },
+    "experience-feedback-loop": {
+      "status": "idle",
+      "lastRun": null,
+      "totalRuns": 0,
+      "totalRecordsAnalyzed": 0,
+      "totalKnowledgeGapsFound": 0,
+      "totalTasksCreated": 0,
+      "successRate": 0,
+      "lastError": null,
+      "consecutiveFailures": 0
+    },
+    "sop-completion-monitor": {
+      "status": "idle",
+      "lastRun": null,
+      "totalRuns": 0,
+      "totalTasksMonitored": 0,
+      "averageCompletionRate": 0,
+      "totalTimeoutTasks": 0,
+      "successRate": 0,
+      "lastError": null,
+      "consecutiveFailures": 0
+    }
+  },
+  "metrics": {
+    "knowledgeCards": {
+      "total": 0,
+      "draft": 0,
+      "pendingReview": 0,
+      "published": 0,
+      "rejected": 0,
+      "archived": 0,
+      "averageQualityScore": 0
+    },
+    "experienceRecords": {
+      "total": 0,
+      "thisWeek": 0,
+      "lastWeek": 0,
+      "averageSatisfaction": 0,
+      "coverageRate": 0
+    },
+    "sopTasks": {
+      "total": 0,
+      "inProgress": 0,
+      "submitted": 0,
+      "completed": 0,
+      "averageCompletionTime": 0,
+      "averageQualityScore": 0
+    }
+  },
+  "patterns": {
+    "knowledgeCard": {
+      "commonIssues": [],
+      "bestPractices": [],
+      "optimizationSuggestions": []
+    },
+    "experienceQA": {
+      "frequentQuestions": [],
+      "knowledgeGaps": [],
+      "satisfactionTrends": []
+    },
+    "sopTraining": {
+      "commonMistakes": [],
+      "effectivePractices": [],
+      "completionPatterns": []
+    }
+  },
+  "audit": {
+    "recentEvents": [],
+    "totalEvents": 0,
+    "lastAuditTime": null
+  },
+  "configuration": {
+    "maxRetries": 3,
+    "timeoutMinutes": 60,
+    "confidenceThreshold": 0.8,
+    "enableNotifications": true,
+    "enableAuditLog": true
+  }
+}

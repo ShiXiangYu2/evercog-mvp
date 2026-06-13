@@ -1,0 +1,113 @@
+name: "evercog-trusted-experience-loop"
+description: "Evercog MVP 可信经验闭环 - 知识卡质量巡检、经验问答反馈、SOP 监控"
+
+# ==================== Loop 1: 知识卡质量巡检 ====================
+loops:
+  - name: "knowledge-card-patrol"
+    description: "每日检查知识卡质量，确保内容可信"
+    trigger:
+      type: "schedule"
+      schedule: "0 8 * * *"
+    pipeline:
+      - skill: "scan-knowledge-cards"
+        params:
+          status: ["pending_review"]
+          max_items: 50
+      - skill: "knowledge-review"
+        params:
+          quality_threshold: 0.8
+          check_dimensions:
+            - completeness
+            - risk_notes
+            - source_attribution
+            - content_accuracy
+      - skill: "generate-quality-report"
+    termination:
+      max_items_per_loop: 50
+      timeout_minutes: 60
+      confidence_threshold: 0.8
+    hitl:
+      require_approval_before:
+        - "approve-knowledge-card"
+        - "reject-knowledge-card"
+
+  # ==================== Loop 2: 经验问答反馈 ====================
+  - name: "experience-feedback-loop"
+    description: "收集经验问答使用反馈，持续优化知识库"
+    trigger:
+      type: "schedule"
+      schedule: "0 9 * * 1"
+    pipeline:
+      - skill: "scan-experience-records"
+        params:
+          time_range: "last_7_days"
+          max_items: 100
+      - skill: "analyze-question-patterns"
+        params:
+          identify_gaps: true
+          identify_frequent_questions: true
+      - skill: "generate-knowledge-gaps"
+      - skill: "create-knowledge-tasks"
+    termination:
+      max_items_per_loop: 100
+      timeout_minutes: 120
+      confidence_threshold: 0.7
+    hitl:
+      require_approval_before:
+        - "create-knowledge-card-task"
+
+  # ==================== Loop 3: SOP 完成度监控 ====================
+  - name: "sop-completion-monitor"
+    description: "监控 SOP 训练完成情况，确保知识传递有效"
+    trigger:
+      type: "schedule"
+      schedule: "0 18 * * *"
+    pipeline:
+      - skill: "scan-sop-tasks"
+        params:
+          status: ["in_progress", "submitted"]
+          max_items: 30
+      - skill: "check-sop-quality"
+        params:
+          check_completeness: true
+          check_executability: true
+      - skill: "generate-review-suggestions"
+      - skill: "notify-mentors"
+    termination:
+      max_items_per_loop: 30
+      timeout_minutes: 60
+      confidence_threshold: 0.8
+    hitl:
+      require_approval_before:
+        - "approve-sop-submission"
+        - "reject-sop-submission"
+
+# ==================== 全局配置 ====================
+memory:
+  human_path: "loop-memory.md"
+  state_path: "loop-state.json"
+  auto_update: true
+
+worktree:
+  enabled: true
+  base_dir: ".worktrees"
+  auto_cleanup: true
+
+logging:
+  level: "info"
+  audit_log: "loop-audit.log"
+  max_size_mb: 100
+  retention_days: 90
+
+notifications:
+  enabled: true
+  channels:
+    - type: "console"
+    - type: "file"
+      path: "loop-notifications.log"
+  events:
+    - "loop_started"
+    - "loop_completed"
+    - "loop_failed"
+    - "requires_human"
+    - "confidence_below_threshold"

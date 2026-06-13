@@ -59,6 +59,37 @@ npm run dev
 | 审计日志 | 关键操作全链路追溯 |
 | 权限管理 | 基于角色和部门的知识可见范围控制 |
 
+## Loop Engineering - 可信经验闭环
+
+本项目采用 Loop Engineering 方法论，实现可信经验闭环：
+
+```text
+输入可信 → 过程可信 → 输出可信 → 反馈可信
+```
+
+### Loop 模式
+
+| Loop | 触发时间 | 目标 |
+|------|----------|------|
+| 知识卡质量巡检 | 每天 8:00 | 确保知识库内容可信 |
+| 经验问答反馈 | 每周一 9:00 | 持续优化知识库 |
+| SOP 完成度监控 | 每天 18:00 | 确保知识传递有效 |
+
+### 快速开始
+
+```bash
+# 运行 Loop Engineering 快速启动脚本
+bash scripts/setup-loop.sh
+
+# 或手动设置
+npm install
+npm run db:push
+npm run db:seed
+npm run dev
+```
+
+详细使用说明请查看：[Loop Engineering 使用指南](docs/loop-engineering-guide.md)
+
 ## 开发命令
 
 ```bash

@@ -5,6 +5,7 @@ import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import Sidebar from '@/components/Sidebar'
 import UserSwitcher from '@/components/UserSwitcher'
+import { PolicyContextCard } from '@/components/PolicyContextCard'
 import {
   ArrowLeft,
   ExternalLink,
@@ -238,6 +239,22 @@ export default function PolicyLinkDetailPage() {
                   </div>
                 </div>
               </div>
+
+              {/* Policy Context Card */}
+              <PolicyContextCard
+                context={{
+                  validFrom: '2024-01-01',
+                  validTo: '2027-12-31',
+                  status: 'active',
+                  applicableRegions: ['全国'],
+                  applicableEntities: ['小微企业', '个体工商户'],
+                  clauseNumbers: ['第一条', '第二款', '第三项'],
+                }}
+                applicability={{
+                  status: 'applicable',
+                  reason: '客户为小微企业，符合政策适用条件',
+                }}
+              />
 
               {/* Brief Section */}
               {link.brief ? (

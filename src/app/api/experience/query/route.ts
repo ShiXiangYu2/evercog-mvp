@@ -25,7 +25,7 @@ export const POST = withAuth(async (request, { user }) => {
     const retrievedCards = searchResults.map((r) => r.card)
 
     if (retrievedCards.length === 0) {
-      // 未找到相关知识卡
+      // 未找到相关知识卡 - 创建知识缺口记录
       const query = await prisma.experienceQuery.create({
         data: {
           question,
@@ -35,10 +35,45 @@ export const POST = withAuth(async (request, { user }) => {
         },
       })
 
+      // 创建知识缺口记录
+      const gap = await prisma.knowledgeGap.create({
+        data: {
+          question,
+          frequency: 1,
+          priority: 'high',
+          status: 'open',
+          suggestedAction: 'create_card',
+        },
+      })
+
+      // 记录审计日志
+      await createAuditLog({
+        userId: user.id,
+        action: 'create',
+        entityType: 'knowledge_gap',
+        entityId: gap.id,
+        details: {
+          question,
+          gapId: gap.id,
+        },
+      })
+
+      logger.info('Knowledge gap created', {
+        gapId: gap.id,
+        question: question.substring(0, 50),
+        userId: user.id,
+      })
+
       return NextResponse.json({
         query,
         reply: null,
-        message: '未找到相关知识卡，请联系运营部门补充知识库。',
+        message: '未找到相关知识卡，已记录知识缺口，建议导师补充。',
+        gap: {
+          id: gap.id,
+          question: gap.question,
+          priority: gap.priority,
+          suggestedAction: gap.suggestedAction,
+        },
       })
     }
 
@@ -54,6 +89,9 @@ export const POST = withAuth(async (request, { user }) => {
         tags: c.tags,
         source: c.source,
         riskNotes: c.riskNotes,
+        reviewerName: searchResults.find((r) => r.card.id === c.id)?.card.reviewer?.name || '未知',
+        updatedAt: c.updatedAt?.toISOString() || new Date().toISOString(),
+        status: c.status,
       })),
     })
 

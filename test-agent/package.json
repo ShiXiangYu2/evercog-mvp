@@ -1,0 +1,18 @@
+{
+  "name": "evercog-test-agent",
+  "version": "1.0.0",
+  "description": "自动化测试 Agent - 模拟真实用户使用项目",
+  "scripts": {
+    "test": "vitest run",
+    "test:ui": "vitest --ui",
+    "test:headed": "vitest run --headed",
+    "test:debug": "vitest run --debug",
+    "report": "node utils/report-generator.js"
+  },
+  "dependencies": {
+    "@playwright/test": "^1.40.0"
+  },
+  "devDependencies": {
+    "vitest": "^1.0.0"
+  }
+}

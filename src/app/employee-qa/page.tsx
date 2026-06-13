@@ -12,6 +12,10 @@ import {
   Target,
   BarChart3,
   RefreshCw,
+  ArrowRight,
+  HelpCircle,
+  ArrowLeft,
+  Loader2,
 } from 'lucide-react'
 
 interface EmployeeQAData {
@@ -52,6 +56,7 @@ interface EmployeeQAData {
 export default function EmployeeQAPage() {
   const [data, setData] = useState<EmployeeQAData | null>(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
 
   useEffect(() => {
     fetch('/api/employee-qa', { credentials: 'same-origin' })
@@ -59,6 +64,7 @@ export default function EmployeeQAPage() {
       .then((data) => {
         if (data.error) {
           console.error('API Error:', data.error)
+          setError(data.error)
           setLoading(false)
         } else {
           setData(data)
@@ -67,6 +73,7 @@ export default function EmployeeQAPage() {
       })
       .catch((err) => {
         console.error('Fetch Error:', err)
+        setError('加载数据失败，请稍后重试')
         setLoading(false)
       })
   }, [])
@@ -147,27 +154,95 @@ export default function EmployeeQAPage() {
   return (
     <div className="p-8">
       {/* 页面标题 */}
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-2xl font-extrabold text-gray-900">员工问答</h1>
-          <p className="text-sm text-gray-500 mt-1">员工自助提问，Agent 智能回答，持续发现知识盲区，驱动知识库迭代。</p>
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-4">
+          <Link
+            href="/"
+            className="flex items-center justify-center w-10 h-10 bg-gray-100 rounded-lg
+                       text-gray-600 hover:bg-gray-200 hover:text-gray-900
+                       transition-all duration-200"
+            title="返回首页"
+          >
+            <ArrowLeft className="w-5 h-5" strokeWidth={2} />
+          </Link>
+          <div>
+            <h1 className="text-2xl font-extrabold text-gray-900">员工问答</h1>
+            <p className="text-sm text-gray-500 mt-1">员工自助提问，Agent 智能回答，持续发现知识盲区，驱动知识库迭代。</p>
+          </div>
         </div>
         <div className="flex items-center gap-3">
           <span className="text-sm text-gray-500">{new Date().toLocaleDateString('zh-CN')}</span>
           <button
-            onClick={() => alert('部门筛选功能开发中')}
-            className="px-3 py-1.5 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
-          >
-            全部门
-          </button>
-          <button
             onClick={() => window.location.reload()}
-            className="px-3 py-1.5 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+            className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
           >
+            <RefreshCw className="w-4 h-4" />
             刷新
           </button>
         </div>
       </div>
+
+      {/* Loading 状态 */}
+      {loading && (
+        <div className="flex items-center justify-center py-20">
+          <Loader2 className="w-8 h-8 text-[#10B981] animate-spin" />
+          <span className="ml-3 text-gray-500">加载中...</span>
+        </div>
+      )}
+
+      {/* Error 状态 */}
+      {error && (
+        <div className="bg-red-50 border-2 border-red-200 rounded-xl p-6 mb-8">
+          <div className="flex items-center gap-3">
+            <AlertTriangle className="w-6 h-6 text-red-500" />
+            <div>
+              <p className="text-sm font-bold text-red-800">加载失败</p>
+              <p className="text-sm text-red-600 mt-1">{error}</p>
+            </div>
+          </div>
+          <button
+            onClick={() => window.location.reload()}
+            className="mt-4 px-4 py-2 bg-red-500 text-white text-sm font-medium rounded-lg hover:bg-red-600 transition-colors"
+          >
+            重试
+          </button>
+        </div>
+      )}
+
+      {/* 经验问答入口 */}
+      <Link href="/experience" className="block mb-8">
+        <div className="bg-gradient-to-r from-[#10B981] to-[#059669] rounded-xl p-6 text-white hover:shadow-lg transition-all duration-200 cursor-pointer">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 bg-white/20 rounded-xl flex items-center justify-center">
+                <HelpCircle className="w-7 h-7 text-white" strokeWidth={2} />
+              </div>
+              <div>
+                <h2 className="text-lg font-bold">经验问答</h2>
+                <p className="text-sm text-white/80 mt-1">输入客户问题，AI 基于已审核知识生成回复建议</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 px-4 py-2 bg-white/20 rounded-lg">
+              <span className="text-sm font-medium">立即提问</span>
+              <ArrowRight className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="mt-4 flex items-center gap-6 text-sm text-white/70">
+            <span className="flex items-center gap-1">
+              <CheckCircle className="w-4 h-4" />
+              引用已审核知识
+            </span>
+            <span className="flex items-center gap-1">
+              <MessageSquare className="w-4 h-4" />
+              展示来源与审核人
+            </span>
+            <span className="flex items-center gap-1">
+              <AlertTriangle className="w-4 h-4" />
+              风险提示与适用场景
+            </span>
+          </div>
+        </div>
+      </Link>
 
       {/* 主要内容区 */}
       <div className="grid grid-cols-2 gap-6 mb-8">
@@ -238,8 +313,8 @@ export default function EmployeeQAPage() {
               </tbody>
             </table>
           </div>
-          <Link href="/experience/history" className="block text-center text-sm text-[#10B981] font-medium mt-4 hover:underline">
-            查看全部主题热度 →
+          <Link href="/experience" className="block text-center text-sm text-[#10B981] font-medium mt-4 hover:underline">
+            去经验问答 →
           </Link>
         </div>
 
@@ -300,7 +375,7 @@ export default function EmployeeQAPage() {
             <span className="w-6 h-6 bg-[#10B981] rounded-md flex items-center justify-center text-white text-xs font-bold">③</span>
             知识缺口追踪（Agent 自动发现）
           </h2>
-          <Link href="/knowledge-hub" className="text-sm text-[#10B981] font-medium hover:underline">全部缺口 →</Link>
+          <Link href="/knowledge-hub" className="text-sm text-[#10B981] font-medium hover:underline">查看知识库 →</Link>
         </div>
         <div className="space-y-3">
           {knowledgeGapTracking.map((gap) => (
@@ -319,7 +394,7 @@ export default function EmployeeQAPage() {
                 </div>
                 <p className="text-xs text-gray-500 mt-1">被问 {gap.frequency} 次，{gap.suggestedAction === 'create_card' ? '建议创建知识卡' : gap.suggestedAction === 'update_card' ? '建议更新知识卡' : '建议重写知识卡'}</p>
               </div>
-              <Link href="/knowledge-cards/new" className="px-4 py-2 text-sm font-medium text-white bg-[#10B981] rounded-lg hover:bg-[#059669] transition-colors">
+              <Link href={`/knowledge-cards/new?title=${encodeURIComponent(gap.title)}&gapId=${gap.id}`} className="px-4 py-2 text-sm font-medium text-white bg-[#10B981] rounded-lg hover:bg-[#059669] transition-colors">
                 {gap.action}
               </Link>
             </div>
@@ -339,7 +414,7 @@ export default function EmployeeQAPage() {
           </h2>
           <div className="flex items-center gap-2">
             <span className="text-sm text-gray-500">较昨日</span>
-            <Link href="/knowledge-hub" className="text-sm text-[#10B981] font-medium hover:underline">查看质量报告 →</Link>
+            <Link href="/knowledge-hub" className="text-sm text-[#10B981] font-medium hover:underline">查看知识库 →</Link>
           </div>
         </div>
         <div className="grid grid-cols-4 gap-4">

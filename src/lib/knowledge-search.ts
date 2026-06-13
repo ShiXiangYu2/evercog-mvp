@@ -36,6 +36,7 @@ export interface SearchResult {
     createdAt: Date
     updatedAt: Date
     creator?: { id: string; name: string; role: string; departmentId?: string } | null
+    reviewer?: { id: string; name: string } | null
   }
   /** 相关性评分 */
   score: number
@@ -188,6 +189,7 @@ export async function searchKnowledgeCards(
     },
     include: {
       creator: { select: { id: true, name: true, role: true, departmentId: true } },
+      reviewer: { select: { id: true, name: true } },
     },
     orderBy: { updatedAt: 'desc' },
   })

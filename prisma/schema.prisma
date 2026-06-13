@@ -164,6 +164,12 @@ model KnowledgeCard {
   reviewerId         String?
   reviewer           User?               @relation("Reviewer", fields: [reviewerId], references: [id])
   reviewedAt         DateTime?
+  // 政策上下文字段
+  validFrom          DateTime?           // 生效日期
+  validTo            DateTime?           // 截止日期
+  applicableRegions  String?             // 适用地区（JSON 数组）
+  applicableEntities String?             // 适用主体（JSON 数组）
+  clauseNumbers      String?             // 条款编号（JSON 数组）
   createdAt          DateTime            @default(now())
   updatedAt          DateTime            @updatedAt
   knowledgeCardStats KnowledgeCardStats?
@@ -393,4 +399,24 @@ model KnowledgeCardStats {
   @@index([viewCount])
   @@index([avgRating])
   @@map("knowledge_card_stats")
+}
+
+// 优化任务（基于用户反馈）
+model OptimizationTask {
+  id         String   @id @default(cuid())
+  sourceType String   // 来源类型：feedback, gap_detection
+  sourceId   String   // 来源 ID
+  question   String   // 原始问题
+  status     String   @default("pending") // 状态：pending, in_progress, completed, ignored
+  priority   String   @default("medium") // 优先级：high, medium, low
+  reason     String?  // 原因说明
+  assignedTo String?  // 分配给谁
+  resolvedAt DateTime? // 解决时间
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([status])
+  @@index([priority])
+  @@index([sourceType, sourceId])
+  @@map("optimization_tasks")
 }
