@@ -68,7 +68,6 @@ export interface UseStarRatingReturn {
 export function useStarRating(options: UseStarRatingOptions = {}): UseStarRatingReturn {
   const {
     initialValue = 0,
-    maxRating = 5,
     readonly = false,
     onChange,
   } = options

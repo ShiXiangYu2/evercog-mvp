@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { ChevronDown, Check } from 'lucide-react'
-import { login, type CurrentUser } from '@/lib/auth-client'
+import { login } from '@/lib/auth-client'
 import { useAuth } from '@/components/AuthProvider'
 
 interface User {

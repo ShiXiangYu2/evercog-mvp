@@ -1,81 +1,98 @@
-/**
- * BaseEntityService — 泛型 Service 基类
+﻿/**
+ * BaseEntityService 鈥?娉涘瀷 Service 鍩虹被
  *
- * 封装所有实体共享的 CRUD + 状态流转 + 权限检查 + 审计日志模式。
- * 子类只需定义 config 和 hook 方法。
- *
- * 设计依据：auto-dev-framework improve-codebase-architecture Skill
- * "合并 Service 层重复模式" — Candidate 2
+ * 灏佽鎵€鏈夊疄浣撳叡浜殑 CRUD + 鐘舵€佹祦杞?+ 鏉冮檺妫€鏌?+ 瀹¤鏃ュ織妯″紡銆? * 瀛愮被鍙渶瀹氫箟 config 鍜?hook 鏂规硶銆? *
+ * 璁捐渚濇嵁锛歛uto-dev-framework improve-codebase-architecture Skill
+ * "鍚堝苟 Service 灞傞噸澶嶆ā寮? 鈥?Candidate 2
  */
-import { prisma } from '../prisma'
 import { createAuditLog, type AuditAction, type EntityType } from '../audit'
-import { canAccess, canReview } from '../permission-guard'
+import { canAccess, canReview, hasExtendedVisibility } from '../permission-guard'
 import logger from '../logger'
 import type {
   AuthUser,
   ListFilters,
   PaginatedResult,
   EntityConfig,
-  StateTransitionMap,
 } from './base-types'
-import { notFound, forbidden, optimisticLock, ServiceError } from './base-types'
+import { notFound, forbidden, optimisticLock } from './base-types'
 
-// ==================== Prisma 模型映射 ====================
+// ==================== Prisma 妯″瀷鏄犲皠 ====================
 
-/**
- * Prisma 模型名称映射
- * entityType → Prisma 模型名（首字母小写）
- */
-const MODEL_MAP: Record<string, string> = {
-  knowledge_card: 'knowledgeCard',
-  policy_link: 'policyLink',
-  policy_brief: 'policyBrief',
+type EntityRecord = {
+  id: string
+  version?: number
 }
 
+interface EntityModel<TRecord extends EntityRecord> {
+  findMany(args: unknown): Promise<TRecord[]>
+  count(args: unknown): Promise<number>
+  findUnique(args: unknown): Promise<TRecord | null>
+  create(args: unknown): Promise<TRecord>
+  update(args: unknown): Promise<TRecord>
+  delete(args: unknown): Promise<TRecord>
+}
+
+function getStringField(record: object, field: string): string | undefined {
+  const value = (record as Record<string, unknown>)[field]
+  return typeof value === 'string' ? value : undefined
+}
+
+function getNumberField(record: object, field: string): number | undefined {
+  const value = (record as Record<string, unknown>)[field]
+  return typeof value === 'number' ? value : undefined
+}
+
+/**
+ * Prisma 妯″瀷鍚嶇О鏄犲皠
+ * entityType 鈫?Prisma 妯″瀷鍚嶏紙棣栧瓧姣嶅皬鍐欙級
+ */
 // ==================== BaseEntityService ====================
 
 /**
- * 实体 Service 基类
+ * 瀹炰綋 Service 鍩虹被
  *
- * 提供完整的 CRUD + 状态流转 + 权限 + 审计能力。
- * 子类通过 override hook 方法注入实体特定逻辑。
- */
-export abstract class BaseEntityService<T extends { id: string }, CreateInput, UpdateInput> {
+ * 鎻愪緵瀹屾暣鐨?CRUD + 鐘舵€佹祦杞?+ 鏉冮檺 + 瀹¤鑳藉姏銆? * 瀛愮被閫氳繃 override hook 鏂规硶娉ㄥ叆瀹炰綋鐗瑰畾閫昏緫銆? */
+export abstract class BaseEntityService<
+  T extends { id: string },
+  CreateInput,
+  UpdateInput,
+  TRecord extends EntityRecord = T & EntityRecord
+> {
   protected config: EntityConfig
 
   constructor(config: EntityConfig) {
     this.config = config
   }
 
-  // ==================== 抽象方法（子类必须实现） ====================
+  // ==================== 鎶借薄鏂规硶锛堝瓙绫诲繀椤诲疄鐜帮級 ====================
 
-  /** 获取 Prisma 模型代理（如 prisma.knowledgeCard） */
-  protected abstract get model(): any
+  /** 鑾峰彇 Prisma 妯″瀷浠ｇ悊锛堝 prisma.knowledgeCard锛?*/
+  protected abstract get model(): EntityModel<TRecord>
 
-  /** 将数据库记录转换为返回类型 */
-  protected abstract toResponse(record: any): T
+  /** 灏嗘暟鎹簱璁板綍杞崲涓鸿繑鍥炵被鍨?*/
+  protected abstract toResponse(record: TRecord): T
 
-  /** 包含关联的 Prisma include 配置 */
+  /** 鍖呭惈鍏宠仈鐨?Prisma include 閰嶇疆 */
   protected abstract get include(): Record<string, unknown>
 
-  // ==================== Hook 方法（子类可选 override） ====================
+  // ==================== Hook 鏂规硶锛堝瓙绫诲彲閫?override锛?====================
 
-  /** 创建前的额外验证 */
+  /** 鍒涘缓鍓嶇殑棰濆楠岃瘉 */
   protected async beforeCreate(_data: CreateInput, _user: AuthUser): Promise<void> {}
 
-  /** 创建后的额外操作 */
-  protected async afterCreate(_record: any, _user: AuthUser): Promise<void> {}
+  /** 鍒涘缓鍚庣殑棰濆鎿嶄綔 */
+  protected async afterCreate(_record: TRecord, _user: AuthUser): Promise<void> {}
 
-  /** 更新前的额外验证 */
+  /** 鏇存柊鍓嶇殑棰濆楠岃瘉 */
   protected async beforeUpdate(_id: string, _data: UpdateInput, _user: AuthUser): Promise<void> {}
 
-  /** 状态流转前的额外验证 */
+  /** 鐘舵€佹祦杞墠鐨勯澶栭獙璇?*/
   protected async beforeTransition(_id: string, _from: string, _to: string, _user: AuthUser): Promise<void> {}
 
-  /** 状态流转后的额外操作 */
+  /** 鐘舵€佹祦杞悗鐨勯澶栨搷浣?*/
   protected async afterTransition(_id: string, _from: string, _to: string, _user: AuthUser): Promise<void> {}
 
-  /** 构建搜索条件 */
+  /** 鏋勫缓鎼滅储鏉′欢 */
   protected buildSearchCondition(search: string): Record<string, unknown> {
     return {
       OR: this.config.searchFields.map((field) => ({
@@ -84,10 +101,10 @@ export abstract class BaseEntityService<T extends { id: string }, CreateInput, U
     }
   }
 
-  // ==================== CRUD 操作 ====================
+  // ==================== CRUD 鎿嶄綔 ====================
 
   /**
-   * 列表查询（带分页、搜索、权限过滤）
+   * 鍒楄〃鏌ヨ锛堝甫鍒嗛〉銆佹悳绱€佹潈闄愯繃婊わ級
    */
   async list(filters: ListFilters, user: AuthUser): Promise<PaginatedResult<T>> {
     const { search, page = 1, pageSize = 20, ...rest } = filters
@@ -98,8 +115,9 @@ export abstract class BaseEntityService<T extends { id: string }, CreateInput, U
       Object.assign(where, this.buildSearchCondition(search))
     }
 
-    // 应用子类额外过滤条件
+    // 搴旂敤瀛愮被棰濆杩囨护鏉′欢
     this.applyFilters(where, rest)
+    this.applyAccessFilter(where, user)
 
     const [items, total] = await Promise.all([
       this.model.findMany({
@@ -113,7 +131,7 @@ export abstract class BaseEntityService<T extends { id: string }, CreateInput, U
     ])
 
     return {
-      items: items.map((item: any) => this.toResponse(item)),
+      items: items.map((item) => this.toResponse(item)),
       total,
       page,
       pageSize,
@@ -121,13 +139,20 @@ export abstract class BaseEntityService<T extends { id: string }, CreateInput, U
     }
   }
 
-  /** 子类 override 以应用额外过滤条件 */
+  /** 瀛愮被 override 浠ュ簲鐢ㄩ澶栬繃婊ゆ潯浠?*/
   protected applyFilters(_where: Record<string, unknown>, _filters: Record<string, unknown>): void {}
 
+  protected applyAccessFilter(where: Record<string, unknown>, user: AuthUser): void {
+    if (hasExtendedVisibility(user)) return
+    if (this.config.accessDepartmentField) {
+      where[this.config.accessDepartmentField] = user.departmentId
+    }
+  }
+
   /**
-   * 获取单个实体
+   * 鑾峰彇鍗曚釜瀹炰綋
    */
-  async getById(id: string, _user: AuthUser): Promise<T> {
+  async getById(id: string, user: AuthUser): Promise<T> {
     const record = await this.model.findUnique({
       where: { id },
       include: this.include,
@@ -137,11 +162,22 @@ export abstract class BaseEntityService<T extends { id: string }, CreateInput, U
       throw notFound(`${this.config.entityLabel}不存在`, { id })
     }
 
+    if (!this.canReadRecord(record, user)) {
+      throw forbidden(`无权查看此${this.config.entityLabel}`, { id })
+    }
+
     return this.toResponse(record)
   }
 
+  protected canReadRecord(record: TRecord, user: AuthUser): boolean {
+    if (hasExtendedVisibility(user)) return true
+    if (!this.config.accessDepartmentField) return true
+    const departmentId = getStringField(record, this.config.accessDepartmentField)
+    return departmentId === user.departmentId
+  }
+
   /**
-   * 创建实体
+   * 鍒涘缓瀹炰綋
    */
   async create(data: CreateInput, user: AuthUser): Promise<T> {
     await this.beforeCreate(data, user)
@@ -153,7 +189,7 @@ export abstract class BaseEntityService<T extends { id: string }, CreateInput, U
 
     await this.afterCreate(record, user)
 
-    // 审计日志
+    // 瀹¤鏃ュ織
     await this.audit('create', record.id, { ...(data as object) }, user)
 
     logger.info(`${this.config.entityType} created`, { id: record.id, userId: user.id })
@@ -161,11 +197,11 @@ export abstract class BaseEntityService<T extends { id: string }, CreateInput, U
     return this.toResponse(record)
   }
 
-  /** 子类实现：构建 Prisma create 数据 */
+  /** 瀛愮被瀹炵幇锛氭瀯寤?Prisma create 鏁版嵁 */
   protected abstract buildCreateData(data: CreateInput, user: AuthUser): Record<string, unknown>
 
   /**
-   * 更新实体
+   * 鏇存柊瀹炰綋
    */
   async update(id: string, data: UpdateInput, user: AuthUser, expectedVersion?: number): Promise<T> {
     const existing = await this.model.findUnique({ where: { id } })
@@ -174,14 +210,13 @@ export abstract class BaseEntityService<T extends { id: string }, CreateInput, U
       throw notFound(`${this.config.entityLabel}不存在`, { id })
     }
 
-    // 权限检查
-    const ownerId = existing[this.config.ownerField]
+    const ownerId = getStringField(existing, this.config.ownerField)
     if (!canAccess(user, this.config.entityType, 'write', { ownerId })) {
       throw forbidden(`无权编辑此${this.config.entityLabel}`, { id })
     }
 
-    // 乐观锁
-    if (expectedVersion !== undefined && existing.version !== expectedVersion) {
+    const currentVersion = getNumberField(existing, 'version')
+    if (expectedVersion !== undefined && currentVersion !== expectedVersion) {
       throw optimisticLock()
     }
 
@@ -201,11 +236,11 @@ export abstract class BaseEntityService<T extends { id: string }, CreateInput, U
     return this.toResponse(record)
   }
 
-  /** 子类实现：构建 Prisma update 数据 */
+  /** 瀛愮被瀹炵幇锛氭瀯寤?Prisma update 鏁版嵁 */
   protected abstract buildUpdateData(data: UpdateInput): Record<string, unknown>
 
   /**
-   * 删除实体
+   * 鍒犻櫎瀹炰綋
    */
   async delete(id: string, user: AuthUser): Promise<void> {
     const existing = await this.model.findUnique({ where: { id } })
@@ -214,7 +249,6 @@ export abstract class BaseEntityService<T extends { id: string }, CreateInput, U
       throw notFound(`${this.config.entityLabel}不存在`, { id })
     }
 
-    // 权限检查：仅管理员可删除
     if (!canAccess(user, this.config.entityType, 'delete')) {
       throw forbidden(`无权删除此${this.config.entityLabel}`, { id })
     }
@@ -226,11 +260,10 @@ export abstract class BaseEntityService<T extends { id: string }, CreateInput, U
     logger.info(`${this.config.entityType} deleted`, { id, userId: user.id })
   }
 
-  // ==================== 状态流转 ====================
+  // ==================== 鐘舵€佹祦杞?====================
 
   /**
-   * 执行状态流转
-   */
+   * 鎵ц鐘舵€佹祦杞?   */
   async transition(
     id: string,
     targetStatus: string,
@@ -243,7 +276,10 @@ export abstract class BaseEntityService<T extends { id: string }, CreateInput, U
       throw notFound(`${this.config.entityLabel}不存在`, { id })
     }
 
-    const currentStatus = existing[this.config.statusField]
+    const currentStatus = getStringField(existing, this.config.statusField)
+    if (!currentStatus) {
+      throw notFound(`当前${this.config.entityLabel}状态不存在`, { id })
+    }
     const allowedTargets = this.config.transitions[currentStatus] || []
 
     if (!allowedTargets.includes(targetStatus)) {
@@ -253,13 +289,13 @@ export abstract class BaseEntityService<T extends { id: string }, CreateInput, U
       throw notFound(`当前状态不允许从${fromLabel}流转到${toLabel}`, { id, status: currentStatus })
     }
 
-    // 权限检查（审核操作需要审核权限）
+    // 鏉冮檺妫€鏌ワ紙瀹℃牳鎿嶄綔闇€瑕佸鏍告潈闄愶級
     if (targetStatus === 'published' || targetStatus === 'reviewed' || targetStatus === 'rejected') {
       if (!canReview(user, this.config.entityType)) {
         throw forbidden(`无权审核此${this.config.entityLabel}`, { id })
       }
     } else {
-      const ownerId = existing[this.config.ownerField]
+      const ownerId = getStringField(existing, this.config.ownerField)
       if (!canAccess(user, this.config.entityType, 'write', { ownerId })) {
         throw forbidden(`无权操作此${this.config.entityLabel}`, { id })
       }
@@ -271,15 +307,16 @@ export abstract class BaseEntityService<T extends { id: string }, CreateInput, U
       [this.config.statusField]: targetStatus,
     }
 
-    // 审核操作自动设置审核时间和审核人
+    // 瀹℃牳鎿嶄綔鑷姩璁剧疆瀹℃牳鏃堕棿鍜屽鏍镐汉
     if (targetStatus === 'published' || targetStatus === 'reviewed' || targetStatus === 'rejected') {
       transitionData.reviewedAt = new Date()
       transitionData.reviewerId = user.id
     }
 
-    // 版本递增
+    // 鐗堟湰閫掑
     if (options?.incrementVersion) {
-      transitionData.version = existing.version + 1
+      const currentVersion = getNumberField(existing, 'version')
+      transitionData.version = (currentVersion ?? 0) + 1
     }
 
     const record = await this.model.update({
@@ -290,7 +327,7 @@ export abstract class BaseEntityService<T extends { id: string }, CreateInput, U
 
     await this.afterTransition(id, currentStatus, targetStatus, user)
 
-    // 审计日志
+    // 瀹¤鏃ュ織
     const action: AuditAction = targetStatus === 'published' || targetStatus === 'reviewed'
       ? 'approve'
       : targetStatus === 'rejected'
@@ -313,10 +350,10 @@ export abstract class BaseEntityService<T extends { id: string }, CreateInput, U
     return this.toResponse(record)
   }
 
-  // ==================== 审计日志 ====================
+  // ==================== 瀹¤鏃ュ織 ====================
 
   /**
-   * 统一审计日志入口
+   * 缁熶竴瀹¤鏃ュ織鍏ュ彛
    */
   protected async audit(
     action: AuditAction,

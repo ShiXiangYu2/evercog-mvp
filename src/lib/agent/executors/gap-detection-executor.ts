@@ -3,7 +3,7 @@
  *
  * 实现 AgentExecutor 接口，用于检测知识缺口
  */
-import type { AgentExecutor, AgentTaskType, GapDetectionResult } from '../types'
+import type { AgentExecutor, AgentTaskType } from '../types'
 import { GapDetector } from '../gap-detector'
 
 // ==================== 缺口检测执行器 ====================

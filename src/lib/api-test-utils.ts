@@ -131,7 +131,7 @@ export async function createAuthenticatedRequest(
 export function expectErrorResponse(
   response: NextResponse,
   expectedStatus: number,
-  expectedError?: string
+  _expectedError?: string
 ): void {
   expect(response.status).toBe(expectedStatus)
 

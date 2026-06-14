@@ -5,7 +5,7 @@
  */
 import { BaseEntityService } from './base-service'
 import { prisma } from '../prisma'
-import type { AuthUser, EntityConfig, ListFilters, PaginatedResult } from './base-types'
+import type { AuthUser, EntityConfig, ListFilters } from './base-types'
 
 // ==================== 类型定义 ====================
 
@@ -57,6 +57,7 @@ const POLICY_LINK_CONFIG: EntityConfig = {
   entityLabel: '政策链接',
   statusField: 'status',
   ownerField: 'submitterId',
+  accessDepartmentField: 'departmentId',
   searchFields: ['title', 'url'],
   transitions: {
     submitted: ['collected'],
@@ -81,7 +82,8 @@ const POLICY_LINK_CONFIG: EntityConfig = {
 export class PolicyLinkService extends BaseEntityService<
   PolicyLinkWithRelations,
   CreatePolicyLinkInput,
-  UpdatePolicyLinkInput
+  UpdatePolicyLinkInput,
+  PolicyLinkWithRelations
 > {
   constructor() {
     super(POLICY_LINK_CONFIG)
@@ -98,7 +100,7 @@ export class PolicyLinkService extends BaseEntityService<
     }
   }
 
-  protected toResponse(record: any): PolicyLinkWithRelations {
+  protected toResponse(record: PolicyLinkWithRelations): PolicyLinkWithRelations {
     return record
   }
 

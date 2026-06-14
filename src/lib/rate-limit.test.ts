@@ -1,5 +1,5 @@
-/**
- * Rate Limiting 单元测试
+﻿/**
+ * Rate Limiting 鍗曞厓娴嬭瘯
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import {
@@ -12,16 +12,10 @@ import {
   LOGIN_RATE_LIMIT,
 } from './rate-limit'
 
-// 清空存储的辅助函数
-function clearStore() {
-  // 通过导入模块并访问内部状态来清空
-  // 由于 store 是模块内部的，我们需要重置它
-  vi.resetModules()
-}
 
 describe('Rate Limiting', () => {
   beforeEach(() => {
-    // 每个测试使用不同的 key 避免污染
+    // 姣忎釜娴嬭瘯浣跨敤涓嶅悓鐨?key 閬垮厤姹℃煋
     vi.clearAllTimers()
   })
 
@@ -41,13 +35,11 @@ describe('Rate Limiting', () => {
       const config = { windowMs: 60000, maxRequests: 3 }
       const key = `deny-test-${Date.now()}`
 
-      // 前 3 次应该允许
       checkRateLimit(key, config)
       checkRateLimit(key, config)
       const third = checkRateLimit(key, config)
       expect(third.allowed).toBe(true)
 
-      // 第 4 次应该拒绝
       const fourth = checkRateLimit(key, config)
       expect(fourth.allowed).toBe(false)
       expect(fourth.remaining).toBe(0)
@@ -60,13 +52,12 @@ describe('Rate Limiting', () => {
       checkRateLimit(key, config)
       checkRateLimit(key, config)
 
-      // 超过限制
+      // 瓒呰繃闄愬埗
       const denied = checkRateLimit(key, config)
       expect(denied.allowed).toBe(false)
 
-      // 等待窗口过期
-      // 由于无法真正等待，这里测试逻辑正确性
-      expect(denied.resetMs).toBeGreaterThan(0)
+      // 绛夊緟绐楀彛杩囨湡
+      // 鐢变簬鏃犳硶鐪熸绛夊緟锛岃繖閲屾祴璇曢€昏緫姝ｇ‘鎬?      expect(denied.resetMs).toBeGreaterThan(0)
     })
 
     it('should use custom key generator', () => {
@@ -88,7 +79,7 @@ describe('Rate Limiting', () => {
       checkRateLimit(key1, config)
       checkRateLimit(key1, config)
 
-      // key-2 应该独立计算
+      // key-2 搴旇鐙珛璁＄畻
       const result = checkRateLimit(key2, config)
       expect(result.allowed).toBe(true)
       expect(result.current).toBe(1)
@@ -160,10 +151,6 @@ describe('Rate Limiting', () => {
       const request = new Request('http://localhost')
       const config = { windowMs: 60000, maxRequests: 1, byUser: true }
 
-      // 第一次允许（使用 user ID）
-      isRateLimited(request, config, `exceed-user-${Date.now()}`)
-
-      // 第二次拒绝（同一个 user ID）
       const userId = `exceed-user-${Date.now()}`
       isRateLimited(request, config, userId)
       const { limited, response } = isRateLimited(request, config, userId)

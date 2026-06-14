@@ -1,14 +1,29 @@
 /**
  * GET /api/export/knowledge-cards/excel - 导出知识卡为 Excel
+ *
+ * 权限要求：
+ * - admin: 可以导出所有知识卡
+ * - ai_info: 可以导出所有知识卡
+ * - mentor: 可以导出本部门知识卡
+ * - 其他角色: 只能导出自己创建的知识卡
  */
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { withAuth } from '@/lib/auth'
 import { getExcelGenerator } from '@/lib/export/excel-generator'
 import logger from '@/lib/logger'
 
-export const GET = withAuth(async (request) => {
+export const GET = withAuth(async (request, { user }) => {
   try {
+    // 权限检查
+    const allowedRoles = ['admin', 'ai_info', 'mentor', 'finance']
+    if (!allowedRoles.includes(user.role)) {
+      return NextResponse.json(
+        { error: 'Insufficient permissions for export' },
+        { status: 403 }
+      )
+    }
+
     const { searchParams } = new URL(request.url)
     const category = searchParams.get('category')
     const status = searchParams.get('status')

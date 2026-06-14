@@ -16,7 +16,6 @@ import {
   Smartphone,
   AlertTriangle,
   FileText,
-  ChevronRight,
 } from 'lucide-react'
 
 interface PolicyBrief {

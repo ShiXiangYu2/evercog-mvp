@@ -9,7 +9,7 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname, useRouter } from 'next/navigation'
+import { usePathname } from 'next/navigation'
 import {
   LayoutDashboard,
   FileSearch,
@@ -22,7 +22,6 @@ import {
   ChevronLeft,
   ChevronRight,
   LogOut,
-  User,
   LogIn,
 } from 'lucide-react'
 import { useState, useEffect } from 'react'
@@ -54,7 +53,6 @@ const ROLE_LABELS: Record<string, string> = {
 
 export default function Sidebar() {
   const pathname = usePathname()
-  const router = useRouter()
   const { user } = useAuth()
   const [collapsed, setCollapsed] = useState(false)
   const [loggingOut, setLoggingOut] = useState(false)

@@ -1,9 +1,8 @@
 /**
- * POST /api/auth/login - 用户登录
+ * POST /api/auth/login
  *
- * 支持两种登录方式：
- * 1. MVP 演示模式：仅需 userId 即可登录
- * 2. 生产模式：userId + password 登录
+ * Production requires password authentication. Demo login by userId is only
+ * available outside production when DEMO_LOGIN_ENABLED=true.
  */
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
@@ -15,6 +14,9 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     const { userId, password } = body
+    const demoLoginEnabled =
+      process.env.NODE_ENV !== 'production' &&
+      process.env.DEMO_LOGIN_ENABLED === 'true'
 
     if (!userId || typeof userId !== 'string') {
       return NextResponse.json(
@@ -23,7 +25,6 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 查找用户
     const user = await prisma.user.findUnique({
       where: { id: userId },
       select: {
@@ -56,7 +57,6 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 检查账户是否被锁定
     const lockStatus = checkLoginLock(user.loginAttempts, user.lockedUntil)
     if (lockStatus.locked) {
       const remainingMinutes = Math.ceil(lockStatus.remainingMs / 60000)
@@ -69,18 +69,20 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 如果提供了密码，进行密码验证
     if (password) {
-      // 生产模式：需要密码验证
       if (!user.passwordHash) {
-        // 用户没有设置密码，使用演示模式
-        console.warn(`User ${userId} has no password hash, using demo mode`)
+        if (!demoLoginEnabled) {
+          return NextResponse.json(
+            { error: 'Password login is not configured for this user' },
+            { status: 401 }
+          )
+        }
+
+        logger.warn('Demo login used for user without password hash', { userId })
       } else {
-        // 验证密码
         const passwordValid = await verifyPassword(password, user.passwordHash)
 
         if (!passwordValid) {
-          // 记录登录失败
           const failureResult = recordLoginFailure(user.loginAttempts)
 
           await prisma.user.update({
@@ -102,28 +104,28 @@ export async function POST(request: NextRequest) {
           )
         }
 
-        // 登录成功，重置失败次数
         await prisma.user.update({
           where: { id: userId },
           data: resetLoginAttempts(),
         })
       }
     } else {
-      // MVP 演示模式：不验证密码
-      // 如果用户有密码哈希，发出警告
-      if (user.passwordHash) {
-        console.warn(`User ${userId} has password but no password provided, using demo mode`)
+      if (!demoLoginEnabled) {
+        return NextResponse.json(
+          { error: 'Password is required' },
+          { status: 401 }
+        )
       }
+
+      logger.warn('Demo login used without password', { userId })
     }
 
-    // 签发 JWT
     const { token, expiresAt } = await signToken({
       userId: user.id,
       role: user.role,
       departmentId: user.departmentId,
     })
 
-    // 构建响应
     const response = NextResponse.json({
       user: {
         id: user.id,
@@ -136,7 +138,6 @@ export async function POST(request: NextRequest) {
       expiresAt: expiresAt.toISOString(),
     })
 
-    // 设置 HttpOnly Cookie
     response.headers.set('Set-Cookie', createCookieHeader(token, expiresAt))
 
     return response

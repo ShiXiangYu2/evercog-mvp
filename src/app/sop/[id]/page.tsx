@@ -6,13 +6,11 @@ import { useRouter } from 'next/navigation'
 import { useAuth } from '@/components/AuthProvider'
 import {
   ArrowLeft,
-  GraduationCap,
   Clock,
   CheckCircle2,
   Send,
   FileText,
   AlertTriangle,
-  Eye,
   MessageSquare,
   BookOpen,
   Target,

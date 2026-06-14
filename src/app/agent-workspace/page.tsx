@@ -3,17 +3,11 @@
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import {
-  Bot,
   FileText,
   ClipboardCheck,
   Bell,
-  TrendingUp,
   Clock,
   CheckCircle,
-  AlertTriangle,
-  BookOpen,
-  Target,
-  Calendar,
   History,
 } from 'lucide-react'
 import AgentChat from '@/components/AgentChat'
@@ -69,7 +63,6 @@ interface Conversation {
 
 export default function AgentWorkspacePage() {
   const [data, setData] = useState<AgentWorkspaceData | null>(null)
-  const [loading, setLoading] = useState(true)
   const [chatMode, setChatMode] = useState<'welcome' | 'chat'>('welcome')
   const [showHistory, setShowHistory] = useState(false)
   const [history, setHistory] = useState<Conversation[]>([])
@@ -108,15 +101,12 @@ export default function AgentWorkspacePage() {
       .then((data) => {
         if (data.error) {
           console.error('API Error:', data.error)
-          setLoading(false)
         } else {
           setData(data)
-          setLoading(false)
         }
       })
       .catch((err) => {
         console.error('Fetch Error:', err)
-        setLoading(false)
       })
   }, [])
 

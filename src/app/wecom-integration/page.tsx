@@ -8,10 +8,8 @@ import {
   Users,
   Clock,
   TrendingUp,
-  TrendingDown,
   CheckCircle,
   AlertTriangle,
-  Settings,
   RefreshCw,
 } from 'lucide-react'
 
@@ -54,23 +52,18 @@ interface WeComIntegrationData {
 
 export default function WeComIntegrationPage() {
   const [data, setData] = useState<WeComIntegrationData | null>(null)
-  const [loading, setLoading] = useState(true)
-
   useEffect(() => {
     fetch('/api/wecom-integration', { credentials: 'same-origin' })
       .then((res) => res.json())
       .then((data) => {
         if (data.error) {
           console.error('API Error:', data.error)
-          setLoading(false)
         } else {
           setData(data)
-          setLoading(false)
         }
       })
       .catch((err) => {
         console.error('Fetch Error:', err)
-        setLoading(false)
       })
   }, [])
 

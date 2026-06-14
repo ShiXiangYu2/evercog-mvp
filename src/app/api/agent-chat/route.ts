@@ -13,22 +13,10 @@ import { getLLMProvider } from '@/lib/llm-provider'
 import { createAuditLog } from '@/lib/audit'
 import logger from '@/lib/logger'
 
-interface ChatMessage {
-  role: 'user' | 'agent'
-  content: string
-  citations?: Array<{
-    cardId: string
-    title: string
-    category: string
-    reviewerName?: string
-  }>
-  timestamp: string
-}
-
 // 快捷指令处理
 async function handleCommand(
   command: string,
-  userId: string
+  _userId: string
 ): Promise<{ reply: string; data?: unknown }> {
   switch (command) {
     case '/审核': {

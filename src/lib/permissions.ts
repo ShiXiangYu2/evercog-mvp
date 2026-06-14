@@ -267,8 +267,6 @@ export function getRolePermissionMatrix() {
 export function getUserPermissions(user: User) {
   const access = ROLE_KNOWLEDGE_ACCESS[user.role] || ROLE_KNOWLEDGE_ACCESS.sales
   const canReview = ROLE_REVIEW_PERMISSIONS[user.role] || []
-  const isReviewer = REVIEWABLE_ROLES.includes(user.role)
-
   return {
     user: {
       id: user.id,

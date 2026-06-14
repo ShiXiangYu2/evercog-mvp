@@ -8,7 +8,6 @@ import {
   ChevronRight,
   User as UserIcon,
   Clock,
-  Search,
   X,
 } from 'lucide-react'
 

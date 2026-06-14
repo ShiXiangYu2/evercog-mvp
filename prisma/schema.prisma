@@ -300,6 +300,7 @@ model AgentTask {
   createdByUser  User      @relation("AgentTaskCreator", fields: [createdBy], references: [id])
   dueDate        DateTime? // 截止时间
   completedAt    DateTime? // 完成时间
+  input          String? // 任务输入（JSON）
   result         String? // 任务结果（JSON）
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
@@ -423,4 +424,114 @@ model OptimizationTask {
   @@index([priority])
   @@index([sourceType, sourceId])
   @@map("optimization_tasks")
+}
+
+// ==================== Loop 调度器模块 ====================
+
+// Loop 执行记录
+model LoopExecution {
+  id              String   @id @default(cuid())
+  loopName        String   // Loop 名称
+  triggerType     String   // 触发类型：schedule, event, condition, manual
+  triggerReason   String?  // 触发原因
+  status          String   @default("running") // 状态：running, completed, failed, cancelled
+  startedAt       DateTime @default(now())
+  completedAt     DateTime? // 完成时间
+  duration        Int?     // 执行时长（毫秒）
+  itemsProcessed  Int      @default(0) // 处理项目数
+  itemsSucceeded  Int      @default(0) // 成功项目数
+  itemsFailed     Int      @default(0) // 失败项目数
+  result          String?  // 执行结果摘要（JSON）
+  error           String?  // 错误信息
+  pipelineSnapshot String? // Pipeline 配置快照（JSON）
+  createdAt       DateTime @default(now())
+
+  @@index([loopName])
+  @@index([status])
+  @@index([startedAt])
+  @@map("loop_executions")
+}
+
+// 调度器状态
+model SchedulerState {
+  id                  String   @id @default(cuid())
+  loopName            String   @unique // Loop 名称（唯一）
+  status              String   @default("idle") // 状态：idle, running, paused, error
+  lastRunAt           DateTime? // 上次运行时间
+  totalRuns           Int      @default(0) // 总运行次数
+  consecutiveFailures Int      @default(0) // 连续失败次数
+  lastError           String?  // 上次错误信息
+  configuration       String?  // 运行时配置（JSON，可覆盖 .loop-config.yaml）
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@map("scheduler_states")
+}
+
+// ==================== Agent 决策日志 ====================
+
+model AgentDecisionLog {
+  id              String   @id @default(cuid())
+  decisionType    String   // 决策类型：create_task, trigger_loop, adjust_priority, escalate, no_action
+  reasoning       String   // 决策理由（人类可读）
+  confidence      Float    // 置信度 0-1
+  riskLevel       String   // 风险等级：safe, caution, dangerous
+  actions         String   // 行动列表（JSON）
+  context         String?  // 决策上下文快照（JSON）
+  outcome         String?  // 执行结果：success, failed, pending_approval
+  approvedBy      String?  // 审批人
+  approvedAt      DateTime? // 审批时间
+  createdAt       DateTime @default(now())
+
+  @@index([decisionType])
+  @@index([riskLevel])
+  @@index([outcome])
+  @@index([createdAt])
+  @@map("agent_decision_logs")
+}
+
+// ==================== Agent 学习模式 ====================
+
+model AgentLearningPattern {
+  id               String   @id @default(cuid())
+  patternType      String   // 模式类型：feedback_quality, review_issue, qa_miss, rule_adjustment
+  category         String?  // 关联的知识卡分类
+  description      String   // 模式描述（人类可读）
+  frequency        Int      @default(1) // 出现次数
+  confidence       Float    @default(0.5) // 置信度 0-1
+  evidence         String?  // 证据数据（JSON：相关 ID 列表等）
+  suggestedAction  String?  // 建议行动
+  status           String   @default("active") // 状态：active, deprecated, superseded
+  learnedAt        DateTime @default(now()) // 学习时间
+  lastReinforcedAt DateTime @default(now()) // 最后强化时间
+  supersededById   String?  // 被哪个新模式取代
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([patternType])
+  @@index([category])
+  @@index([status])
+  @@index([confidence])
+  @@map("agent_learning_patterns")
+}
+
+// ==================== 规则调整记录 ====================
+
+model RuleAdjustment {
+  id              String   @id @default(cuid())
+  ruleId          String   // 规则 ID
+  currentConfig   String   // 当前配置（JSON）
+  suggestedConfig String   // 建议配置（JSON）
+  reason          String   // 调整原因
+  basedOnPatterns String   // 基于的模式 ID 列表（JSON）
+  confidence      Float    // 置信度
+  status          String   @default("pending") // 状态：pending, approved, rejected
+  approvedBy      String?  // 审批人
+  approvedAt      DateTime? // 审批时间
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([ruleId])
+  @@index([status])
+  @@map("rule_adjustments")
 }

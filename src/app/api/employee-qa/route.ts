@@ -12,7 +12,6 @@ export const GET = withAuth(async () => {
       // 经验调用记录
       experienceQueries,
       // 质量监控指标
-      qualityMetrics,
     ] = await Promise.all([
       // 问答热力图统计
       prisma.questionHeatMap.findMany({
@@ -32,10 +31,6 @@ export const GET = withAuth(async () => {
         },
       }),
       // 质量监控指标
-      prisma.qualityMetrics.findMany({
-        orderBy: { calculatedAt: 'desc' },
-        take: 4,
-      }),
     ])
 
     // 构建问答热力图

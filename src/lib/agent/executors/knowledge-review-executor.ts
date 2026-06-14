@@ -3,7 +3,7 @@
  *
  * 实现 AgentExecutor 接口，用于审核知识卡
  */
-import type { AgentExecutor, AgentTaskType, KnowledgeReviewResult } from '../types'
+import type { AgentExecutor, AgentTaskType } from '../types'
 import { ReviewService } from '../review-service'
 
 // ==================== 知识卡审核执行器 ====================

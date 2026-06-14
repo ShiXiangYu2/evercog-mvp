@@ -4,7 +4,7 @@
  * 分析最近的问答记录，识别高频未覆盖问题
  * 生成知识缺口报告
  */
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { withAuth } from '@/lib/auth'
 import { detectKnowledgeGaps } from '@/lib/agent/gap-detector'
 import { createAuditLog } from '@/lib/audit'

@@ -5,7 +5,6 @@
  * 生成知识缺口报告和改进建议
  */
 import { prisma } from '../prisma'
-import { createAuditLog } from '../audit'
 import logger from '../logger'
 
 // ==================== 类型定义 ====================

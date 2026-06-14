@@ -80,11 +80,9 @@ export default function PermissionsPage() {
   const [matrix, setMatrix] = useState<MatrixData | null>(null)
   const [userPermissions, setUserPermissions] = useState<UserPermissions | null>(null)
   const [loading, setLoading] = useState(true)
-  const [currentUserId, setCurrentUserId] = useState<string>('')
 
   useEffect(() => {
     const userId = localStorage.getItem('currentUserId') || '4'
-    setCurrentUserId(userId)
 
     const fetchData = async () => {
       try {

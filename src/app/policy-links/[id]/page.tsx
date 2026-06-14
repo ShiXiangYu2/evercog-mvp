@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { useRouter, useParams } from 'next/navigation'
+import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import { PolicyContextCard } from '@/components/PolicyContextCard'
 import {
@@ -15,7 +15,6 @@ import {
   Archive,
   ChevronRight,
   Building,
-  Users,
   RefreshCw,
 } from 'lucide-react'
 
@@ -61,7 +60,6 @@ const customerTypeLabels: Record<string, string> = {
 const statusFlow = ['submitted', 'collected', 'brief_generated', 'reviewed', 'pushed', 'archived']
 
 export default function PolicyLinkDetailPage() {
-  const router = useRouter()
   const params = useParams()
   const id = params.id as string
 

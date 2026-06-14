@@ -223,7 +223,7 @@ export function resetRateLimitStore(): void {
 
 // ==================== 导出 ====================
 
-export default {
+const rateLimit = {
   checkRateLimit,
   getClientIdentifier,
   createRateLimitResponse,
@@ -233,3 +233,5 @@ export default {
   AUTHENTICATED_RATE_LIMIT,
   LOGIN_RATE_LIMIT,
 }
+
+export default rateLimit

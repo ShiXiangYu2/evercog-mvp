@@ -62,7 +62,7 @@ export class AgentOrchestrator implements AgentOrchestratorInterface {
         status: 'pending',
         assignedTo: null,
         createdBy,
-        result: JSON.stringify(input),
+        input: JSON.stringify(input),
       },
     })
 
@@ -130,7 +130,7 @@ export class AgentOrchestrator implements AgentOrchestratorInterface {
 
     try {
       // 4. 执行任务
-      const input = task.result ? JSON.parse(task.result as string) : {}
+      const input = task.input ? JSON.parse(task.input as string) : {}
       const output = await executor.execute(input)
 
       // 5. 更新任务状态为完成
@@ -279,6 +279,7 @@ export class AgentOrchestrator implements AgentOrchestratorInterface {
     priority: string
     title: string
     description: string | null
+    input: string | null
     result: string | null
     assignedTo: string | null
     createdBy: string
@@ -286,9 +287,9 @@ export class AgentOrchestrator implements AgentOrchestratorInterface {
     updatedAt: Date
     completedAt: Date | null
   }): AgentTask {
-    const input = record.result ? JSON.parse(record.result) : {}
-    const output = record.status === 'completed' ? input : undefined
-    const error = record.status === 'failed' ? input.error : undefined
+    const input = record.input ? JSON.parse(record.input) : {}
+    const output = record.status === 'completed' && record.result ? JSON.parse(record.result) : undefined
+    const error = record.status === 'failed' && record.result ? JSON.parse(record.result).error : undefined
 
     return {
       id: record.id,
@@ -297,7 +298,7 @@ export class AgentOrchestrator implements AgentOrchestratorInterface {
       priority: record.priority as AgentTaskPriority,
       title: record.title,
       description: record.description || undefined,
-      input: record.status === 'pending' ? input : {},
+      input,
       output,
       error,
       assignedTo: record.assignedTo || undefined,

@@ -72,6 +72,14 @@ const salesUser: AuthUser = {
   email: 'sales@example.com',
 }
 
+const financeUser: AuthUser = {
+  id: 'finance-1',
+  name: 'Finance',
+  role: 'finance',
+  departmentId: 'dept-2',
+  email: 'finance@example.com',
+}
+
 const mockBrief = {
   id: 'brief-1',
   policyLinkId: 'link-1',
@@ -88,7 +96,7 @@ const mockBrief = {
   createdAt: new Date(),
   updatedAt: new Date(),
   generator: { id: 'sales-1', name: 'Sales', role: 'sales' },
-  policyLink: { id: 'link-1', url: 'https://example.com', title: '测试链接', customerType: 'restaurant' },
+  policyLink: { id: 'link-1', url: 'https://example.com', title: '测试链接', customerType: 'restaurant', departmentId: 'dept-1' },
 }
 
 // ==================== 测试 ====================
@@ -351,6 +359,12 @@ describe('PolicyBriefService', () => {
       expect(result.items).toHaveLength(2)
       expect(result.total).toBe(5)
       expect(result.totalPages).toBe(3)
+      expect(mockFindMany.mock.calls[0][0].where.policyLink).toEqual({
+        is: { departmentId: 'dept-1' },
+      })
+      expect(mockCount.mock.calls[0][0].where.policyLink).toEqual({
+        is: { departmentId: 'dept-1' },
+      })
     })
 
     it('should filter by reviewStatus', async () => {
@@ -363,6 +377,16 @@ describe('PolicyBriefService', () => {
 
       expect(result.items).toHaveLength(1)
       expect(result.items[0].reviewStatus).toBe('reviewed')
+    })
+
+    it('should not constrain expanded visibility roles by policy link department', async () => {
+      mockFindMany.mockResolvedValue([mockBrief])
+      mockCount.mockResolvedValue(1)
+
+      await service.list({ page: 1, pageSize: 20 }, financeUser)
+
+      expect(mockFindMany.mock.calls[0][0].where.policyLink).toBeUndefined()
+      expect(mockCount.mock.calls[0][0].where.policyLink).toBeUndefined()
     })
   })
 })

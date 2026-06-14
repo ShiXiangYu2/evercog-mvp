@@ -60,14 +60,6 @@ const reviewerUser: AuthUser = {
   email: 'reviewer@example.com',
 }
 
-const adminUser: AuthUser = {
-  id: 'admin-1',
-  name: 'Admin',
-  role: 'admin',
-  departmentId: 'dept-1',
-  email: 'admin@example.com',
-}
-
 // ==================== 测试 ====================
 
 describe('KnowledgeCard 完整状态流转', () => {

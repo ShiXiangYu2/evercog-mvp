@@ -89,6 +89,15 @@ export function getLLMProvider(): LLMProvider {
     const providerType = process.env.LLM_PROVIDER || 'mock'
     const isProduction = process.env.NODE_ENV === 'production'
 
+    // 生产环境检查：强制使用真实 Provider
+    if (isProduction && providerType === 'mock') {
+      throw new Error(
+        '[LLM] CRITICAL: Cannot use mock provider in production! ' +
+        'Please set LLM_PROVIDER to "deepseek" or "openai" and configure the corresponding API key. ' +
+        'Using mock provider in production would return fake data to users.'
+      )
+    }
+
     switch (providerType) {
       case 'deepseek': {
         try {
@@ -115,9 +124,8 @@ export function getLLMProvider(): LLMProvider {
         _provider = new MockLLMProvider()
         break
       case 'mock':
-        if (isProduction) {
-          logger.warn('[LLM] WARNING: Using mock provider in production! AI features will return fake data.')
-        }
+        // 开发环境允许使用 mock
+        logger.warn('[LLM] WARNING: Using mock provider in development mode. AI features will return fake data.')
         _provider = new MockLLMProvider()
         break
       default:
@@ -160,7 +168,9 @@ export async function callLLMWithFallback<T>(
   }
 ): Promise<T> {
   const provider = getLLMProvider()
-  const fallbackEnabled = process.env.LLM_FALLBACK_TO_MOCK === 'true'
+  const fallbackEnabled =
+    process.env.NODE_ENV !== 'production' &&
+    process.env.LLM_FALLBACK_TO_MOCK === 'true'
   const startTime = Date.now()
 
   // 1. 检查预算

@@ -3,7 +3,7 @@
  *
  * 将审核通过的政策简报推送给相关部门
  */
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { withAuth } from '@/lib/auth'
 import { pushBrief } from '@/lib/agent/push-service'

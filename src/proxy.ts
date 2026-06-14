@@ -86,7 +86,7 @@ function checkRateLimit(request: NextRequest): NextResponse | null {
 
 // ==================== 中间件主函数 ====================
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   // 1. 处理 CORS 预检
   const corsResponse = handleCors(request)
   if (corsResponse) {

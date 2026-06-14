@@ -5,8 +5,9 @@
  */
 import { BaseEntityService } from './base-service'
 import { prisma } from '../prisma'
+import { hasExtendedVisibility } from '../permission-guard'
 import { notFound } from './base-types'
-import type { AuthUser, EntityConfig, ListFilters, PaginatedResult } from './base-types'
+import type { AuthUser, EntityConfig, ListFilters } from './base-types'
 
 // ==================== 类型定义 ====================
 
@@ -53,7 +54,7 @@ export interface PolicyBriefWithRelations {
   createdAt: Date
   updatedAt: Date
   generator?: { id: string; name: string; role: string } | null
-  policyLink?: { id: string; url: string; title: string | null; customerType: string | null } | null
+  policyLink?: { id: string; url: string; title: string | null; customerType: string | null; departmentId?: string | null } | null
 }
 
 // ==================== 实体配置 ====================
@@ -83,7 +84,8 @@ const POLICY_BRIEF_CONFIG: EntityConfig = {
 export class PolicyBriefService extends BaseEntityService<
   PolicyBriefWithRelations,
   CreatePolicyBriefInput,
-  UpdatePolicyBriefInput
+  UpdatePolicyBriefInput,
+  PolicyBriefWithRelations
 > {
   constructor() {
     super(POLICY_BRIEF_CONFIG)
@@ -96,11 +98,11 @@ export class PolicyBriefService extends BaseEntityService<
   protected get include() {
     return {
       generator: { select: { id: true, name: true, role: true } },
-      policyLink: { select: { id: true, url: true, title: true, customerType: true } },
+      policyLink: { select: { id: true, url: true, title: true, customerType: true, departmentId: true } },
     }
   }
 
-  protected toResponse(record: any): PolicyBriefWithRelations {
+  protected toResponse(record: PolicyBriefWithRelations): PolicyBriefWithRelations {
     return record
   }
 
@@ -137,6 +139,16 @@ export class PolicyBriefService extends BaseEntityService<
     if (filters.generatorId) where.generatorId = filters.generatorId
   }
 
+  protected applyAccessFilter(where: Record<string, unknown>, user: AuthUser): void {
+    if (hasExtendedVisibility(user)) return
+    where.policyLink = { is: { departmentId: user.departmentId } }
+  }
+
+  protected canReadRecord(record: PolicyBriefWithRelations, user: AuthUser): boolean {
+    if (hasExtendedVisibility(user)) return true
+    return record.policyLink?.departmentId === user.departmentId
+  }
+
   // ==================== Hook: 创建前验证政策链接 ====================
 
   protected async beforeCreate(data: CreatePolicyBriefInput, _user: AuthUser): Promise<void> {
@@ -151,7 +163,7 @@ export class PolicyBriefService extends BaseEntityService<
 
   // ==================== Hook: 创建后更新政策链接状态 ====================
 
-  protected async afterCreate(record: any, _user: AuthUser): Promise<void> {
+  protected async afterCreate(record: PolicyBriefWithRelations, _user: AuthUser): Promise<void> {
     await prisma.policyLink.update({
       where: { id: record.policyLinkId },
       data: { status: 'brief_generated' },

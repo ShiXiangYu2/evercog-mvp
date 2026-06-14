@@ -1,7 +1,7 @@
 /**
  * GET /api/export/audit-logs/csv - 导出审计日志为 CSV
  */
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { withAuth } from '@/lib/auth'
 import { getCSVGenerator } from '@/lib/export/csv-generator'

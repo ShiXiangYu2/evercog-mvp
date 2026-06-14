@@ -6,13 +6,11 @@ import { useAuth } from '@/components/AuthProvider'
 import {
   GraduationCap,
   Plus,
-  Search,
   Clock,
   CheckCircle2,
   AlertTriangle,
   Send,
   FileText,
-  User as UserIcon,
   ChevronRight,
   Filter,
   ChevronDown,
@@ -65,13 +63,15 @@ export default function SOPPage() {
   const [loading, setLoading] = useState(true)
   const [filterStatus, setFilterStatus] = useState('')
   const [showFilters, setShowFilters] = useState(false)
+  const authUserId = authUser?.id
+  const authUserRole = authUser?.role
 
   const fetchTasks = useCallback(async () => {
-    if (!authUser) return
+    if (!authUserId || !authUserRole) return
     setLoading(true)
     const params = new URLSearchParams()
-    params.set('userId', authUser.id)
-    params.set('role', authUser.role)
+    params.set('userId', authUserId)
+    params.set('role', authUserRole)
     if (filterStatus) params.set('status', filterStatus)
 
     try {
@@ -84,7 +84,7 @@ export default function SOPPage() {
     } finally {
       setLoading(false)
     }
-  }, [authUser?.id, authUser?.role, filterStatus])
+  }, [authUserId, authUserRole, filterStatus])
 
   useEffect(() => {
     fetchTasks()

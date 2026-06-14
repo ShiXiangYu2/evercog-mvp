@@ -2,7 +2,7 @@
  * JWT 工具模块测试
  * 验证 token 签发、验证、Cookie 操作
  */
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect } from 'vitest'
 import {
   signToken,
   verifyToken,

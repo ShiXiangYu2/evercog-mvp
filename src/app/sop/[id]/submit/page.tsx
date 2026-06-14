@@ -7,7 +7,6 @@ import {
   ArrowLeft,
   Send,
   FileText,
-  Save,
 } from 'lucide-react'
 
 interface TaskData {

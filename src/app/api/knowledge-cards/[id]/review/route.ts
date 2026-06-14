@@ -4,7 +4,7 @@
  * 使用 Agent 自动审核知识卡内容
  * 返回审核结果，不直接修改知识卡状态
  */
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { withAuth } from '@/lib/auth'
 import { reviewKnowledgeCard } from '@/lib/agent/review-service'

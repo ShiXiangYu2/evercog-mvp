@@ -14,15 +14,12 @@ import {
   XCircle,
   Archive,
   Clock,
-  Eye,
   Trash2,
   AlertTriangle,
   FileText,
   HelpCircle,
   Shield,
   Briefcase,
-  FolderOpen,
-  User as UserIcon,
 } from 'lucide-react'
 
 interface KnowledgeCardData {

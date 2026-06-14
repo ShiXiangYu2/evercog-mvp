@@ -17,6 +17,10 @@ export default withSentryConfig(nextConfig, {
   // 仅在生产环境上传
   silent: process.env.NODE_ENV !== "production",
 
-  // 不自动注入 Sentry（我们手动配置）
-  disableLogger: true,
+  // 移除 Sentry SDK debug logging 代码
+  webpack: {
+    treeshake: {
+      removeDebugLogging: true,
+    },
+  },
 })

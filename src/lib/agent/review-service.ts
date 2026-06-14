@@ -6,7 +6,6 @@
  */
 import { prisma } from '../prisma'
 import { getLLMProvider } from '../llm-provider'
-import { createAuditLog } from '../audit'
 import logger from '../logger'
 
 // ==================== 类型定义 ====================
@@ -448,6 +447,11 @@ export class ReviewService {
       // 这里可以调用 LLM 生成意见
       // 暂时返回基于规则的意见
       const comments: string[] = []
+
+      logger.debug('AI review comment prompt prepared', {
+        provider: llm.constructor.name,
+        promptLength: prompt.length,
+      })
 
       if (checks.formatCheck.issues.length > 0) {
         comments.push(`格式问题：${checks.formatCheck.issues[0]}`)

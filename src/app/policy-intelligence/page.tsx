@@ -9,9 +9,6 @@ import {
   Clock,
   CheckCircle,
   RefreshCw,
-  ArrowRight,
-  TrendingUp,
-  TrendingDown,
   Bot,
 } from 'lucide-react'
 
@@ -59,16 +56,13 @@ interface PolicyIntelligenceData {
 
 export default function PolicyIntelligencePage() {
   const [data, setData] = useState<PolicyIntelligenceData | null>(null)
-  const [loading, setLoading] = useState(true)
-
   useEffect(() => {
     fetch('/api/policy-intelligence', { credentials: 'same-origin' })
       .then((res) => res.json())
       .then((data) => {
         setData(data)
-        setLoading(false)
       })
-      .catch(() => setLoading(false))
+      .catch(() => {})
   }, [])
 
   // 模拟数据 - 最新政策动态（当 API 数据为空时使用）

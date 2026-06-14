@@ -49,12 +49,15 @@ describe('Create Policy Link Schema', () => {
     expect(result.success).toBe(false)
   })
 
-  it('should reject empty submitterId', () => {
+  it('should ignore client-provided submitterId', () => {
     const result = createPolicyLinkSchema.safeParse({
       url: 'https://example.com',
       submitterId: '',
     })
-    expect(result.success).toBe(false)
+    expect(result.success).toBe(true)
+    if (result.success) {
+      expect('submitterId' in result.data).toBe(false)
+    }
   })
 
   it('should reject invalid customerType', () => {

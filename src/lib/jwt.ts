@@ -32,6 +32,38 @@ const DEFAULT_EXPIRES_IN = '24h'
 
 const DEFAULT_JWT_SECRET = 'change-this-to-a-strong-random-string-in-production'
 
+/**
+ * 验证 JWT 密钥安全性
+ *
+ * 在应用启动时调用，确保密钥配置正确
+ */
+export function validateJWTConfig(): { valid: boolean; errors: string[] } {
+  const errors: string[] = []
+  const secret = process.env.JWT_SECRET
+
+  if (!secret) {
+    errors.push('JWT_SECRET environment variable is not set')
+  } else {
+    // 检查是否使用默认密钥
+    if (secret === DEFAULT_JWT_SECRET) {
+      errors.push(
+        'JWT_SECRET is using the default value! ' +
+        'Generate a strong secret: node -e "console.log(require(\'crypto\').randomBytes(32).toString(\'hex\'))"'
+      )
+    }
+
+    // 检查密钥长度
+    if (secret.length < 32) {
+      errors.push('JWT_SECRET should be at least 32 characters long')
+    }
+  }
+
+  return {
+    valid: errors.length === 0,
+    errors,
+  }
+}
+
 function getSecret(): Uint8Array {
   const secret = process.env.JWT_SECRET
   if (!secret) {

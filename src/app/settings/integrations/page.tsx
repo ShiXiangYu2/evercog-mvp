@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Settings, MessageSquare, TestTube, CheckCircle, XCircle, Loader2 } from 'lucide-react'
+import { MessageSquare, TestTube, CheckCircle, XCircle, Loader2 } from 'lucide-react'
 
 interface WeComConfig {
   corpId: string

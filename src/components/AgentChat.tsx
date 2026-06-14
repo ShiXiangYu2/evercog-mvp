@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import {
   Send,
   Bot,
@@ -12,8 +12,6 @@ import {
   HelpCircle,
   ArrowLeft,
   Plus,
-  Folder,
-  Paperclip,
 } from 'lucide-react'
 import { sanitizeMarkdownHtml } from '@/lib/sanitize'
 
@@ -59,21 +57,15 @@ export default function AgentChat({ onModeChange, initialMessages, conversationI
       setMessages(initialMessages)
       setMode('chat')
     }
-  }, [conversationId])
+  }, [conversationId, initialMessages])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
-  // 暴露加载对话方法
-  const loadConversation = (convMessages: ChatMessage[]) => {
-    setMessages(convMessages)
-    setMode('chat')
-  }
-
   // 保存对话到 localStorage
-  const saveConversation = () => {
+  const saveConversation = useCallback(() => {
     if (messages.length === 0) return
     const history: Conversation[] = JSON.parse(localStorage.getItem('agent-chat-history') || '[]')
     const firstUserMsg = messages.find(m => m.role === 'user')
@@ -91,14 +83,14 @@ export default function AgentChat({ onModeChange, initialMessages, conversationI
       if (history.length > 20) history.pop()
       localStorage.setItem('agent-chat-history', JSON.stringify(history))
     }
-  }
+  }, [messages])
 
   // 对话变化时自动保存
   useEffect(() => {
     if (mode === 'chat' && messages.length > 0) {
       saveConversation()
     }
-  }, [messages])
+  }, [messages, mode, saveConversation])
 
   // 通知父组件模式变化
   useEffect(() => {

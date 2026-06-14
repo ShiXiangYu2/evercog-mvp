@@ -18,9 +18,7 @@ import {
   Building2,
   Users,
   User,
-  AlertTriangle,
   XCircle,
-  FileText,
 } from 'lucide-react'
 
 interface PushRecord {

@@ -14,7 +14,6 @@ export const GET = withAuth(async () => {
       totalPushRecords,
       unreadPushRecords,
       // Agent 任务统计
-      agentTasks,
     ] = await Promise.all([
       prisma.department.findMany({
         include: {
@@ -25,10 +24,6 @@ export const GET = withAuth(async () => {
       prisma.user.count({ where: { status: 'active' } }),
       prisma.pushRecord.count(),
       prisma.pushRecord.count({ where: { readStatus: 'unread' } }),
-      prisma.agentTask.findMany({
-        take: 10,
-        orderBy: { createdAt: 'desc' },
-      }),
     ])
 
     // 构建连接状态（模拟数据，MVP 阶段）

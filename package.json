@@ -16,6 +16,8 @@
     "db:generate": "npx prisma generate",
     "db:migrate:dev": "npx prisma migrate dev",
     "db:migrate:deploy": "npx prisma migrate deploy",
+    "db:test-migration": "npx tsx scripts/test-migration.ts",
+    "prod:check": "npx tsx scripts/check-production-readiness.ts",
     "postinstall": "prisma generate"
   },
   "prisma": {
@@ -24,12 +26,14 @@
   "dependencies": {
     "@prisma/client": "^6.19.3",
     "@sentry/nextjs": "^10.57.0",
+    "@types/node-cron": "^3.0.11",
     "bcryptjs": "^3.0.3",
     "exceljs": "^4.4.0",
     "isomorphic-dompurify": "^3.17.0",
     "jose": "^6.2.3",
     "lucide-react": "^1.17.0",
     "next": "16.2.9",
+    "node-cron": "^4.2.1",
     "openai": "^6.42.0",
     "pdf-lib": "^1.17.1",
     "prisma": "^6.19.3",

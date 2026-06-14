@@ -16,7 +16,6 @@ import {
   AlertTriangle,
   Lightbulb,
   Target,
-  Shield,
   Building,
   Users,
   Link2,

@@ -3,7 +3,7 @@
  *
  * 迁移到使用 KnowledgeSearch 模块
  */
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { createAuditLog } from '@/lib/audit'
 import { withAuth } from '@/lib/auth'

@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
 import { LogIn, User, Lock, Eye, EyeOff } from 'lucide-react'
 import BrandLogo from '@/components/BrandLogo'
 
@@ -35,7 +34,6 @@ const ROLE_LABELS: Record<string, string> = {
 }
 
 export default function LoginPage() {
-  const router = useRouter()
   const [users, setUsers] = useState<UserOption[]>([])
   const [selectedId, setSelectedId] = useState<string>('')
   const [password, setPassword] = useState('')

@@ -64,6 +64,7 @@ export interface EntityConfig {
   transitions: StateTransitionMap
   /** 创建者字段名（如 'creatorId' 或 'generatorId'） */
   ownerField: string
+  accessDepartmentField?: string
   /** 搜索字段（用于关键词搜索） */
   searchFields: string[]
   /** 状态中文标签（用于错误消息） */

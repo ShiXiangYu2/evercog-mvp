@@ -56,6 +56,16 @@ async function main() {
     prisma.user.create({ data: { name: '吴 AI 工程师', departmentId: aiDept.id, role: 'ai_info', passwordHash } }),
     prisma.user.create({ data: { name: '孙销售', departmentId: salesDept.id, role: 'sales', passwordHash } }),
     prisma.user.create({ data: { name: '郑运营', departmentId: opsDept.id, role: 'operations', passwordHash } }),
+    // 系统用户（用于 Agent 自动操作）
+    prisma.user.create({
+      data: {
+        id: 'system',
+        name: '系统 Agent',
+        departmentId: aiDept.id,
+        role: 'ai_info',
+        status: 'active',
+      },
+    }),
   ])
 
   const [zhangSales, liService, wangOps, zhaoFinance, chenMentor, liuTrainee, zhouAdmin, wuAI, sunSales, zhengOps] = users

@@ -12,8 +12,6 @@ import {
   AlertCircle,
   Clock,
   CheckCircle,
-  Bot,
-  AlertTriangle,
   RefreshCw,
 } from 'lucide-react'
 

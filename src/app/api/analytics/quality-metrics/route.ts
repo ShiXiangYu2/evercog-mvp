@@ -2,7 +2,7 @@
  * GET /api/analytics/quality-metrics - 获取质量指标
  * POST /api/analytics/quality-metrics - 重新计算质量指标
  */
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { withAuth } from '@/lib/auth'
 import { getQualityMetrics, calculateQualityMetrics } from '@/lib/analytics/quality-metrics'
 import logger from '@/lib/logger'

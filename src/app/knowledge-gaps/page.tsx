@@ -47,12 +47,6 @@ const priorityColors: Record<string, string> = {
   low: 'bg-gray-400',
 }
 
-const priorityBg: Record<string, string> = {
-  high: 'bg-red-50 border-red-200',
-  medium: 'bg-amber-50 border-amber-200',
-  low: 'bg-gray-50 border-gray-200',
-}
-
 const statusLabels: Record<string, string> = {
   pending: '待处理',
   in_progress: '处理中',
@@ -76,7 +70,6 @@ const actionLabels: Record<string, string> = {
 export default function KnowledgeGapsPage() {
   const [gaps, setGaps] = useState<KnowledgeGap[]>([])
   const [stats, setStats] = useState<GapStats | null>(null)
-  const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const [loading, setLoading] = useState(true)
@@ -98,7 +91,6 @@ export default function KnowledgeGapsPage() {
       })
       const data = await res.json()
       setGaps(data.items)
-      setTotal(data.total)
       setTotalPages(data.totalPages)
       setStats(data.stats)
     } catch (error) {

@@ -2,7 +2,7 @@
  * POST /api/feedback - 创建反馈
  * GET /api/feedback - 获取反馈列表
  */
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { withAuth } from '@/lib/auth'
 import { getFeedbackService, type FeedbackTargetType } from '@/lib/feedback-service'
 import logger from '@/lib/logger'

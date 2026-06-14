@@ -172,13 +172,13 @@ export function handleApiError(error: unknown): NextResponse<ErrorResponse> {
 
   // 未知错误 - 发送到 Sentry
   logger.error('[UNKNOWN_ERROR]', error instanceof Error ? error : undefined)
-  try {
-    // 动态导入 Sentry，避免未配置时影响
-    const Sentry = require('@sentry/nextjs')
-    Sentry.captureException(error)
-  } catch {
-    // Sentry 未配置时静默失败
-  }
+  void import('@sentry/nextjs')
+    .then((Sentry) => {
+      Sentry.captureException(error)
+    })
+    .catch(() => {
+      // Sentry is optional in local/dev environments.
+    })
 
   return new AppError(
     'An unexpected error occurred',

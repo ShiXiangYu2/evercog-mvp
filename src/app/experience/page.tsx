@@ -7,10 +7,8 @@ import {
   Search,
   Send,
   FileText,
-  Shield,
   Megaphone,
   AlertTriangle,
-  Tag,
   BookOpen,
   History,
   Loader2,
@@ -63,7 +61,7 @@ function CopyButton({ text, className = '' }: { text: string; className?: string
 }
 
 // Feedback Section Component
-function FeedbackSection({ result, queryId }: { result: QueryResult; queryId: string | null }) {
+function FeedbackSection({ queryId }: { queryId: string | null }) {
   const [feedback, setFeedback] = useState<'helpful' | 'not_helpful' | null>(null)
   const [comment, setComment] = useState('')
   const [submitted, setSubmitted] = useState(false)
@@ -207,7 +205,6 @@ export default function ExperiencePage() {
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<QueryResult | null>(null)
   const [noResultMsg, setNoResultMsg] = useState('')
-  const [currentCallerId, setCurrentCallerId] = useState<string>('')
   const [queryId, setQueryId] = useState<string | null>(null)
   const [knowledgeGap, setKnowledgeGap] = useState<{ id: string; question: string } | null>(null)
 
@@ -229,7 +226,6 @@ export default function ExperiencePage() {
     setQueryId(null)
 
     const callerId = getCurrentUserId()
-    setCurrentCallerId(callerId)
 
     try {
       const res = await fetch('/api/experience/query', {
@@ -522,7 +518,7 @@ export default function ExperiencePage() {
               </div>
 
               {/* User Feedback */}
-              <FeedbackSection result={result} queryId={queryId} />
+              <FeedbackSection queryId={queryId} />
             </div>
           )}
         </main>

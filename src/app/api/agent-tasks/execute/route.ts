@@ -4,7 +4,7 @@
  * 手动触发执行待处理的 Agent 任务
  * 通常由管理员或定时任务调用
  */
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { withAuth } from '@/lib/auth'
 import { executeAgentTask, getTaskExecutor } from '@/lib/agent/task-executor'
 import logger from '@/lib/logger'

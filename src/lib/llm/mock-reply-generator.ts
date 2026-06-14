@@ -5,21 +5,30 @@
  */
 import type { ReplyGenerator, ExperienceReplyInput, ExperienceReplyOutput, PolicyContext, ApplicabilityResult } from './types'
 
+type RetrievedCardWithMeta = ExperienceReplyInput['retrievedCards'][number] & {
+  reviewerName?: string
+  updatedAt?: string
+  status?: string
+}
+
 export class MockReplyGenerator implements ReplyGenerator {
   name = 'mock-reply'
 
   async generateExperienceReply(input: ExperienceReplyInput): Promise<ExperienceReplyOutput> {
     const { retrievedCards } = input
 
-    const citedSources = retrievedCards.map((c) => ({
-      cardId: c.id,
-      title: c.title,
-      category: c.category,
-      source: c.source || '内部知识库',
-      reviewerName: (c as any).reviewerName || '未知',
-      updatedAt: (c as any).updatedAt || new Date().toISOString(),
-      status: (c as any).status || 'published',
-    }))
+    const citedSources = retrievedCards.map((c) => {
+      const card = c as RetrievedCardWithMeta
+      return {
+        cardId: card.id,
+        title: card.title,
+        category: card.category,
+        source: card.source || '内部知识库',
+        reviewerName: card.reviewerName || '未知',
+        updatedAt: card.updatedAt || new Date().toISOString(),
+        status: card.status || 'published',
+      }
+    })
 
     const policyCards = retrievedCards.filter(
       (c) => c.category === 'experience' || c.category === 'faq'

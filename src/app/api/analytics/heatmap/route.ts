@@ -2,7 +2,7 @@
  * GET /api/analytics/heatmap - 获取问答热力图数据
  * POST /api/analytics/heatmap - 重新计算热力图
  */
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { withAuth } from '@/lib/auth'
 import { getHeatmapData, calculateHeatmap, type TimeRange } from '@/lib/analytics/heatmap'
 import logger from '@/lib/logger'

@@ -7,14 +7,12 @@ import {
   FileText,
   AlertTriangle,
   Clock,
-  CheckCircle,
   RefreshCw,
   Star,
   TrendingUp,
   TrendingDown,
   Plus,
   Search,
-  Filter,
 } from 'lucide-react'
 
 interface KnowledgeHubData {
@@ -61,8 +59,6 @@ interface KnowledgeHubData {
 
 export default function KnowledgeHubPage() {
   const [data, setData] = useState<KnowledgeHubData | null>(null)
-  const [loading, setLoading] = useState(true)
-
   useEffect(() => {
     fetch('/api/knowledge-hub', {
       credentials: 'same-origin', // 携带 Cookie 认证
@@ -71,15 +67,12 @@ export default function KnowledgeHubPage() {
       .then((data) => {
         if (data.error) {
           console.error('API Error:', data.error)
-          setLoading(false)
         } else {
           setData(data)
-          setLoading(false)
         }
       })
       .catch((err) => {
         console.error('Fetch Error:', err)
-        setLoading(false)
       })
   }, [])
 

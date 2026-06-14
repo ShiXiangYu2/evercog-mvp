@@ -60,6 +60,14 @@ const salesUser: AuthUser = {
   email: 'sales@example.com',
 }
 
+const financeUser: AuthUser = {
+  id: 'finance-1',
+  name: 'Finance',
+  role: 'finance',
+  departmentId: 'dept-2',
+  email: 'finance@example.com',
+}
+
 const mockLink = {
   id: 'link-1',
   url: 'https://example.com/policy',
@@ -261,6 +269,9 @@ describe('PolicyLinkService', () => {
       expect(result.items).toHaveLength(2)
       expect(result.total).toBe(5)
       expect(result.totalPages).toBe(3)
+
+      expect(mockFindMany.mock.calls[0][0].where.departmentId).toBe('dept-1')
+      expect(mockCount.mock.calls[0][0].where.departmentId).toBe('dept-1')
     })
 
     it('should filter by status', async () => {
@@ -273,6 +284,16 @@ describe('PolicyLinkService', () => {
 
       expect(result.items).toHaveLength(1)
       expect(result.items[0].status).toBe('collected')
+    })
+
+    it('should not constrain expanded visibility roles by department', async () => {
+      mockFindMany.mockResolvedValue([mockLink])
+      mockCount.mockResolvedValue(1)
+
+      await service.list({ page: 1, pageSize: 20 }, financeUser)
+
+      expect(mockFindMany.mock.calls[0][0].where.departmentId).toBeUndefined()
+      expect(mockCount.mock.calls[0][0].where.departmentId).toBeUndefined()
     })
   })
 })

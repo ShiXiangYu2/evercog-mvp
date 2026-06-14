@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import {
-  Settings,
   Users,
   Building2,
   Shield,
@@ -11,7 +10,6 @@ import {
   ChevronRight,
   Plus,
   Search,
-  Filter,
 } from 'lucide-react'
 
 interface SettingsData {
@@ -55,7 +53,6 @@ interface SettingsData {
 
 export default function SettingsPage() {
   const [data, setData] = useState<SettingsData | null>(null)
-  const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('users')
 
   useEffect(() => {
@@ -64,15 +61,12 @@ export default function SettingsPage() {
       .then((data) => {
         if (data.error) {
           console.error('API Error:', data.error)
-          setLoading(false)
         } else {
           setData(data)
-          setLoading(false)
         }
       })
       .catch((err) => {
         console.error('Fetch Error:', err)
-        setLoading(false)
       })
   }, [])
 

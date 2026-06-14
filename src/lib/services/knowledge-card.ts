@@ -97,7 +97,8 @@ const KNOWLEDGE_CARD_CONFIG: EntityConfig = {
 export class KnowledgeCardService extends BaseEntityService<
   KnowledgeCardWithRelations,
   CreateKnowledgeCardInput,
-  UpdateKnowledgeCardInput
+  UpdateKnowledgeCardInput,
+  KnowledgeCardWithRelations
 > {
   constructor() {
     super(KNOWLEDGE_CARD_CONFIG)
@@ -116,7 +117,7 @@ export class KnowledgeCardService extends BaseEntityService<
     }
   }
 
-  protected toResponse(record: any): KnowledgeCardWithRelations {
+  protected toResponse(record: KnowledgeCardWithRelations): KnowledgeCardWithRelations {
     return record
   }
 
@@ -173,7 +174,7 @@ export class KnowledgeCardService extends BaseEntityService<
     })
 
     // 按权限过滤
-    const filteredCards = allCards.filter((card: any) =>
+    const filteredCards = allCards.filter((card) =>
       canViewKnowledgeCard(user, {
         status: card.status,
         creatorId: card.creatorId,
@@ -188,7 +189,7 @@ export class KnowledgeCardService extends BaseEntityService<
     const items = filteredCards.slice((page - 1) * pageSize, page * pageSize)
 
     return {
-      items: items.map((item: any) => this.toResponse(item)),
+      items: items.map((item) => this.toResponse(item)),
       total,
       page,
       pageSize,

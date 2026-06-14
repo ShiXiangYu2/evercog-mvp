@@ -10,6 +10,7 @@ import {
   canAccessDepartment,
   canViewKnowledgeCard,
   getKnowledgeCardAccess,
+  hasExtendedVisibility,
   type AuthUser,
 } from '../permission-guard'
 
@@ -45,6 +46,14 @@ const salesUser: AuthUser = {
   role: 'sales',
   departmentId: 'dept-1',
   email: 'sales@example.com',
+}
+
+const aiInfoUser: AuthUser = {
+  id: 'ai-1',
+  name: 'AI Info',
+  role: 'ai_info',
+  departmentId: 'dept-3',
+  email: 'ai@example.com',
 }
 
 // ==================== isAdmin 测试 ====================
@@ -86,6 +95,24 @@ describe('canAccessDepartment', () => {
 
   it('should deny user access to other department', () => {
     expect(canAccessDepartment(salesUser, 'dept-2')).toBe(false)
+  })
+
+  it('should allow finance and ai_info to access other departments', () => {
+    expect(canAccessDepartment(financeUser, 'dept-1')).toBe(true)
+    expect(canAccessDepartment(aiInfoUser, 'dept-1')).toBe(true)
+  })
+})
+
+describe('hasExtendedVisibility', () => {
+  it('should allow admin, finance, and ai_info expanded visibility', () => {
+    expect(hasExtendedVisibility(adminUser)).toBe(true)
+    expect(hasExtendedVisibility(financeUser)).toBe(true)
+    expect(hasExtendedVisibility(aiInfoUser)).toBe(true)
+  })
+
+  it('should deny expanded visibility for normal business roles', () => {
+    expect(hasExtendedVisibility(salesUser)).toBe(false)
+    expect(hasExtendedVisibility(mentorUser)).toBe(false)
   })
 })
 

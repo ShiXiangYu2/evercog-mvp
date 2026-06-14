@@ -1,11 +1,10 @@
-/**
- * 权限检查模块
- *
- * 统一处理所有实体的权限检查逻辑
- * Service 层调用此模块进行权限验证
+﻿/**
+ * 鏉冮檺妫€鏌ユā鍧? *
+ * 缁熶竴澶勭悊鎵€鏈夊疄浣撶殑鏉冮檺妫€鏌ラ€昏緫
+ * Service 灞傝皟鐢ㄦ妯″潡杩涜鏉冮檺楠岃瘉
  */
 
-// ==================== 类型定义 ====================
+// ==================== 绫诲瀷瀹氫箟 ====================
 
 export interface AuthUser {
   id: string
@@ -17,20 +16,23 @@ export interface AuthUser {
 
 export type ActionType = 'read' | 'write' | 'delete' | 'review' | 'publish'
 
-// ==================== 角色定义 ====================
+// ==================== 瑙掕壊瀹氫箟 ====================
 
 /**
- * 具有审核权限的角色
- */
+ * 鍏锋湁瀹℃牳鏉冮檺鐨勮鑹? */
 export const REVIEWABLE_ROLES = ['admin', 'mentor', 'finance']
 
 /**
- * 具有管理权限的角色
- */
+ * 鍏锋湁绠＄悊鏉冮檺鐨勮鑹? */
 export const ADMIN_ROLES = ['admin']
 
 /**
- * 角色可见范围配置
+ * Roles allowed to view cross-department operational knowledge.
+ */
+export const EXTENDED_VISIBILITY_ROLES = ['admin', 'finance', 'ai_info']
+
+/**
+ * 瑙掕壊鍙鑼冨洿閰嶇疆
  */
 const ROLE_KNOWLEDGE_ACCESS: Record<string, {
   canViewAll: boolean
@@ -43,11 +45,11 @@ const ROLE_KNOWLEDGE_ACCESS: Record<string, {
   sales: { canViewAll: false, canViewFinance: false },
   customer_service: { canViewAll: false, canViewFinance: false },
   operations: { canViewAll: false, canViewFinance: false },
-  ai_info: { canViewAll: false, canViewFinance: false },
+  ai_info: { canViewAll: true, canViewFinance: true },
 }
 
 /**
- * 角色审核权限配置
+ * 瑙掕壊瀹℃牳鏉冮檺閰嶇疆
  */
 const ROLE_REVIEW_PERMISSIONS: Record<string, string[]> = {
   admin: ['knowledge_card', 'policy_brief', 'sop_submission'],
@@ -55,10 +57,10 @@ const ROLE_REVIEW_PERMISSIONS: Record<string, string[]> = {
   finance: ['knowledge_card', 'policy_brief'],
 }
 
-// ==================== 权限检查函数 ====================
+// ==================== 鏉冮檺妫€鏌ュ嚱鏁?====================
 
 /**
- * 检查用户是否可以对实体执行指定操作
+ * 妫€鏌ョ敤鎴锋槸鍚﹀彲浠ュ瀹炰綋鎵ц鎸囧畾鎿嶄綔
  */
 export function canAccess(
   user: AuthUser,
@@ -70,7 +72,6 @@ export function canAccess(
     status?: string
   }
 ): boolean {
-  // 管理员拥有所有权限
   if (isAdmin(user)) {
     return true
   }
@@ -92,8 +93,7 @@ export function canAccess(
 }
 
 /**
- * 检查用户是否可以读取实体
- */
+ * 妫€鏌ョ敤鎴锋槸鍚﹀彲浠ヨ鍙栧疄浣? */
 function canRead(
   user: AuthUser,
   entityType: string,
@@ -102,31 +102,31 @@ function canRead(
     status?: string
   }
 ): boolean {
-  // 非 published 状态只有创建者和审核者可见（由 Service 层处理）
-  // 这里只处理部门和角色级别的读取权限
-
+  // 闈?published 鐘舵€佸彧鏈夊垱寤鸿€呭拰瀹℃牳鑰呭彲瑙侊紙鐢?Service 灞傚鐞嗭級
+  // 杩欓噷鍙鐞嗛儴闂ㄥ拰瑙掕壊绾у埆鐨勮鍙栨潈闄?
   if (entityType === 'knowledge_card') {
     const access = ROLE_KNOWLEDGE_ACCESS[user.role] || ROLE_KNOWLEDGE_ACCESS.sales
 
-    // 可以查看所有
     if (access.canViewAll) return true
 
-    // 可以查看本部门
     if (context?.departmentId) {
       return user.departmentId === context.departmentId
     }
 
-    // 默认可以查看 public 范围（由 Service 层过滤）
+    // 榛樿鍙互鏌ョ湅 public 鑼冨洿锛堢敱 Service 灞傝繃婊わ級
     return true
   }
 
-  // 其他实体类型：默认可读（由 Service 层过滤）
-  return true
+  if (hasExtendedVisibility(user)) return true
+  if (context?.departmentId) {
+    return user.departmentId === context.departmentId
+  }
+
+  return false
 }
 
 /**
- * 检查用户是否可以写入实体
- */
+ * 妫€鏌ョ敤鎴锋槸鍚﹀彲浠ュ啓鍏ュ疄浣? */
 function canWrite(
   user: AuthUser,
   entityType: string,
@@ -134,58 +134,56 @@ function canWrite(
     ownerId?: string
   }
 ): boolean {
-  // 创建操作：所有用户都可以
+  // 鍒涘缓鎿嶄綔锛氭墍鏈夌敤鎴烽兘鍙互
   if (!context?.ownerId) {
     return true
   }
 
-  // 更新操作：只有所有者或管理员
   return isOwner(user, context.ownerId)
 }
 
 /**
- * 检查用户是否可以删除实体
- */
-function canDelete(user: AuthUser, entityType: string): boolean {
-  // 只有管理员可以删除
+ * 妫€鏌ョ敤鎴锋槸鍚﹀彲浠ュ垹闄ゅ疄浣? */
+function canDelete(user: AuthUser, _entityType: string): boolean {
   return isAdmin(user)
 }
 
 /**
- * 检查用户是否可以审核实体
- */
+ * 妫€鏌ョ敤鎴锋槸鍚﹀彲浠ュ鏍稿疄浣? */
 export function canReview(user: AuthUser, entityType: string): boolean {
   const reviewable = ROLE_REVIEW_PERMISSIONS[user.role]
   if (!reviewable) return false
   return reviewable.includes(entityType)
 }
 
-// ==================== 辅助函数 ====================
+// ==================== 杈呭姪鍑芥暟 ====================
 
 /**
- * 检查用户是否是管理员
- */
+ * 妫€鏌ョ敤鎴锋槸鍚︽槸绠＄悊鍛? */
 export function isAdmin(user: AuthUser): boolean {
   return ADMIN_ROLES.includes(user.role)
 }
 
 /**
- * 检查用户是否是资源所有者
- */
+ * 妫€鏌ョ敤鎴锋槸鍚︽槸璧勬簮鎵€鏈夎€? */
 export function isOwner(user: AuthUser, ownerId: string): boolean {
   return user.id === ownerId
 }
 
 /**
- * 检查用户是否可以访问指定部门的数据
+ * 妫€鏌ョ敤鎴锋槸鍚﹀彲浠ヨ闂寚瀹氶儴闂ㄧ殑鏁版嵁
  */
 export function canAccessDepartment(user: AuthUser, departmentId: string): boolean {
-  if (isAdmin(user)) return true
+  if (hasExtendedVisibility(user)) return true
   return user.departmentId === departmentId
 }
 
+export function hasExtendedVisibility(user: AuthUser): boolean {
+  return EXTENDED_VISIBILITY_ROLES.includes(user.role)
+}
+
 /**
- * 获取用户的知识卡访问权限
+ * 鑾峰彇鐢ㄦ埛鐨勭煡璇嗗崱璁块棶鏉冮檺
  */
 export function getKnowledgeCardAccess(user: AuthUser) {
   const access = ROLE_KNOWLEDGE_ACCESS[user.role] || ROLE_KNOWLEDGE_ACCESS.sales
@@ -198,7 +196,7 @@ export function getKnowledgeCardAccess(user: AuthUser) {
 }
 
 /**
- * 检查用户是否可见知识卡
+ * 妫€鏌ョ敤鎴锋槸鍚﹀彲瑙佺煡璇嗗崱
  */
 export function canViewKnowledgeCard(
   user: AuthUser,
@@ -210,25 +208,22 @@ export function canViewKnowledgeCard(
     departmentId?: string | null
   }
 ): boolean {
-  // 非 published 状态只有创建者和审核者可见
   if (card.status !== 'published') {
     return card.creatorId === user.id || card.reviewerId === user.id || isAdmin(user)
   }
 
   const access = getKnowledgeCardAccess(user)
 
-  // 可以查看所有
   if (access.canViewAll) return true
 
-  // public 范围：所有人可见
+  // public 鑼冨洿锛氭墍鏈変汉鍙
   if (card.visibilityScope === 'public') return true
 
-  // department 范围：本部门可见
+  // department 鑼冨洿锛氭湰閮ㄩ棬鍙
   if (card.visibilityScope === 'department') {
     return user.departmentId === card.departmentId
   }
 
-  // role 范围：财务角色可看财务相关
   if (card.visibilityScope === 'role') {
     if (access.canViewFinance) return true
     return user.departmentId === card.departmentId
