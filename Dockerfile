@@ -20,6 +20,9 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
+# 切换到 PostgreSQL provider
+RUN node scripts/switch-provider.js postgresql
+
 # 生成 Prisma Client
 RUN npx prisma generate
 
@@ -38,9 +41,6 @@ COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
-
-# 创建数据目录
-RUN mkdir -p /app/data
 
 # 暴露端口
 EXPOSE 3000

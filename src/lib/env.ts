@@ -56,10 +56,19 @@ export function validateEnv(): Env {
     console.error(errors.join('\n'))
     console.error('\n💡 Copy .env.example to .env and fill in the values')
 
-    // 开发环境下提供更详细的错误信息
+    // 开发环境下提供更详细的错误信息（过滤敏感字段）
     if (process.env.NODE_ENV !== 'production') {
-      console.error('\n📋 Current environment variables:')
-      console.error(JSON.stringify(process.env, null, 2))
+      const sensitiveKeys = ['SECRET', 'KEY', 'PASSWORD', 'TOKEN', 'DSN']
+      const filtered = Object.fromEntries(
+        Object.entries(process.env).map(([k, v]) => {
+          if (sensitiveKeys.some(s => k.toUpperCase().includes(s))) {
+            return [k, v ? '***' : '']
+          }
+          return [k, v]
+        })
+      )
+      console.error('\n📋 Current environment variables (sensitive fields redacted):')
+      console.error(JSON.stringify(filtered, null, 2))
     }
 
     throw new Error('Environment validation failed')

@@ -1,4 +1,5 @@
 import { prisma } from './prisma'
+import logger from './logger'
 
 // ==================== 类型定义 ====================
 
@@ -39,7 +40,7 @@ export async function createAuditLog(params: AuditLogParams): Promise<void> {
     })
   } catch (error) {
     // 审计日志记录失败不应影响业务流程
-    console.error('Failed to create audit log:', error)
+    logger.error('Failed to create audit log', error instanceof Error ? error : undefined)
   }
 }
 
@@ -59,7 +60,7 @@ export async function createAuditLogs(paramsList: AuditLogParams[]): Promise<voi
       })),
     })
   } catch (error) {
-    console.error('Failed to create audit logs:', error)
+    logger.error('Failed to create audit logs', error instanceof Error ? error : undefined)
   }
 }
 

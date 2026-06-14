@@ -1,35 +1,25 @@
 /**
  * KnowledgeCard 服务
  *
- * 处理知识卡的 CRUD 操作和状态流转
+ * 基于 BaseEntityService 的知识卡 CRUD 和状态流转
+ * 子类只定义实体特定逻辑：配置、搜索、创建/更新数据构建
  */
+import { BaseEntityService } from './base-service'
+import { canViewKnowledgeCard } from '../permission-guard'
 import { prisma } from '../prisma'
-import { createAuditLog } from '../audit'
-import { canAccess, canViewKnowledgeCard, type AuthUser } from '../permission-guard'
-import { notFound, forbidden, optimisticLock, type ServiceError } from '../service-error'
-import logger from '../logger'
+import { forbidden } from './base-types'
+import type { AuthUser, EntityConfig, ListFilters, PaginatedResult } from './base-types'
 
 // ==================== 类型定义 ====================
 
 export type KnowledgeCardStatus = 'draft' | 'pending_review' | 'published' | 'rejected' | 'archived'
 export type VisibilityScope = 'department' | 'role' | 'public'
 
-export interface ListFilters {
-  search?: string
+export interface KnowledgeCardListFilters extends ListFilters {
   category?: string
   status?: string
   customerType?: string
   tags?: string
-  page?: number
-  pageSize?: number
-}
-
-export interface PaginatedResult<T> {
-  items: T[]
-  total: number
-  page: number
-  pageSize: number
-  totalPages: number
 }
 
 export interface CreateKnowledgeCardInput {
@@ -78,52 +68,112 @@ export interface KnowledgeCardWithRelations {
   reviewer?: { id: string; name: string } | null
 }
 
-// ==================== 状态流转规则 ====================
+// ==================== 实体配置 ====================
 
-const VALID_TRANSITIONS: Record<KnowledgeCardStatus, KnowledgeCardStatus[]> = {
-  draft: ['pending_review'],
-  pending_review: ['published', 'rejected'],
-  published: ['archived'],
-  rejected: ['draft'],
-  archived: [],
+const KNOWLEDGE_CARD_CONFIG: EntityConfig = {
+  entityType: 'knowledge_card',
+  entityLabel: '知识卡',
+  statusField: 'status',
+  ownerField: 'creatorId',
+  searchFields: ['title', 'content'],
+  transitions: {
+    draft: ['pending_review'],
+    pending_review: ['published', 'rejected'],
+    published: ['archived'],
+    rejected: ['draft'],
+    archived: [],
+  },
+  statusLabels: {
+    draft: '草稿',
+    pending_review: '待审核',
+    published: '已发布',
+    rejected: '已驳回',
+    archived: '已归档',
+  },
 }
 
 // ==================== KnowledgeCardService ====================
 
-export class KnowledgeCardService {
-  /**
-   * 列表查询
-   */
-  async list(filters: ListFilters, user: AuthUser): Promise<PaginatedResult<KnowledgeCardWithRelations>> {
-    const { search, category, status, customerType, tags, page = 1, pageSize = 20 } = filters
+export class KnowledgeCardService extends BaseEntityService<
+  KnowledgeCardWithRelations,
+  CreateKnowledgeCardInput,
+  UpdateKnowledgeCardInput
+> {
+  constructor() {
+    super(KNOWLEDGE_CARD_CONFIG)
+  }
 
-    const where: Record<string, unknown> = {}
+  // ==================== 实现抽象方法 ====================
 
-    // 搜索条件
-    if (search) {
-      where.OR = [
-        { title: { contains: search } },
-        { content: { contains: search } },
-      ]
+  protected get model() {
+    return prisma.knowledgeCard
+  }
+
+  protected get include() {
+    return {
+      creator: { select: { id: true, name: true, role: true, departmentId: true } },
+      reviewer: { select: { id: true, name: true } },
     }
+  }
 
-    if (category) where.category = category
-    if (status) where.status = status
-    if (customerType) where.customerType = customerType
-    if (tags) where.tags = { contains: tags }
+  protected toResponse(record: any): KnowledgeCardWithRelations {
+    return record
+  }
 
-    // 查询所有符合条件的卡片
-    let allCards = await prisma.knowledgeCard.findMany({
+  protected buildCreateData(data: CreateKnowledgeCardInput, user: AuthUser): Record<string, unknown> {
+    return {
+      title: data.title,
+      category: data.category,
+      tags: data.tags || null,
+      content: data.content,
+      departmentId: data.departmentId || user.departmentId,
+      customerType: data.customerType || null,
+      source: data.source || null,
+      riskNotes: data.riskNotes || null,
+      visibilityScope: data.visibilityScope || 'department',
+      status: 'draft',
+      version: 1,
+      creatorId: user.id,
+    }
+  }
+
+  protected buildUpdateData(data: UpdateKnowledgeCardInput): Record<string, unknown> {
+    const updateData: Record<string, unknown> = {}
+    if (data.title !== undefined) updateData.title = data.title
+    if (data.category !== undefined) updateData.category = data.category
+    if (data.tags !== undefined) updateData.tags = data.tags
+    if (data.content !== undefined) updateData.content = data.content
+    if (data.departmentId !== undefined) updateData.departmentId = data.departmentId || null
+    if (data.customerType !== undefined) updateData.customerType = data.customerType || null
+    if (data.source !== undefined) updateData.source = data.source || null
+    if (data.riskNotes !== undefined) updateData.riskNotes = data.riskNotes || null
+    if (data.visibilityScope !== undefined) updateData.visibilityScope = data.visibilityScope
+    return updateData
+  }
+
+  // ==================== 覆盖列表查询（权限过滤） ====================
+
+  async list(filters: KnowledgeCardListFilters, user: AuthUser): Promise<PaginatedResult<KnowledgeCardWithRelations>> {
+    const { search, page = 1, pageSize = 20, ...rest } = filters
+
+    // 构建查询条件
+    const where: Record<string, unknown> = {}
+    if (search) {
+      Object.assign(where, this.buildSearchCondition(search))
+    }
+    this.applyFilters(where, rest)
+
+    // 先查询匹配的卡片（带上限，用于权限过滤后再分页）
+    const MAX_RECORDS = 1000
+    const allCards = await prisma.knowledgeCard.findMany({
       where,
-      include: {
-        creator: { select: { id: true, name: true, role: true, departmentId: true } },
-        reviewer: { select: { id: true, name: true } },
-      },
-      orderBy: { updatedAt: 'desc' },
+      include: this.include,
+      orderBy: { createdAt: 'desc' },
+      take: MAX_RECORDS,
     })
 
     // 按权限过滤
-    allCards = allCards.filter((card) =>
+    const filteredCards = allCards.filter((card: any) =>
       canViewKnowledgeCard(user, {
         status: card.status,
         creatorId: card.creatorId,
@@ -133,11 +183,12 @@ export class KnowledgeCardService {
       })
     )
 
-    const total = allCards.length
-    const items = allCards.slice((page - 1) * pageSize, page * pageSize)
+    // 再分页
+    const total = filteredCards.length
+    const items = filteredCards.slice((page - 1) * pageSize, page * pageSize)
 
     return {
-      items,
+      items: items.map((item: any) => this.toResponse(item)),
       total,
       page,
       pageSize,
@@ -145,23 +196,12 @@ export class KnowledgeCardService {
     }
   }
 
-  /**
-   * 获取单个知识卡
-   */
+  // ==================== 覆盖 getById（权限检查） ====================
+
   async getById(id: string, user: AuthUser): Promise<KnowledgeCardWithRelations> {
-    const card = await prisma.knowledgeCard.findUnique({
-      where: { id },
-      include: {
-        creator: { select: { id: true, name: true, role: true, departmentId: true } },
-        reviewer: { select: { id: true, name: true } },
-      },
-    })
+    const card = await super.getById(id, user)
 
-    if (!card) {
-      throw notFound('知识卡不存在', { cardId: id })
-    }
-
-    // 检查查看权限
+    // 知识卡特有：非 published 状态需要额外权限检查
     const canView = canViewKnowledgeCard(user, {
       status: card.status,
       creatorId: card.creatorId,
@@ -177,313 +217,22 @@ export class KnowledgeCardService {
     return card
   }
 
-  /**
-   * 创建知识卡
-   */
-  async create(data: CreateKnowledgeCardInput, user: AuthUser): Promise<KnowledgeCardWithRelations> {
-    const card = await prisma.knowledgeCard.create({
-      data: {
-        title: data.title,
-        category: data.category,
-        tags: data.tags || null,
-        content: data.content,
-        departmentId: data.departmentId || user.departmentId,
-        customerType: data.customerType || null,
-        source: data.source || null,
-        riskNotes: data.riskNotes || null,
-        visibilityScope: data.visibilityScope || 'department',
-        status: 'draft',
-        version: 1,
-        creatorId: user.id,
-      },
-      include: {
-        creator: { select: { id: true, name: true, role: true, departmentId: true } },
-        reviewer: { select: { id: true, name: true } },
-      },
-    })
+  // ==================== 便捷方法（保持向后兼容） ====================
 
-    // 记录审计日志
-    await createAuditLog({
-      userId: user.id,
-      action: 'create',
-      entityType: 'knowledge_card',
-      entityId: card.id,
-      details: { title: card.title },
-    })
-
-    logger.info('Knowledge card created', { cardId: card.id, userId: user.id })
-
-    return card
-  }
-
-  /**
-   * 更新知识卡
-   */
-  async update(
-    id: string,
-    data: UpdateKnowledgeCardInput,
-    user: AuthUser,
-    expectedVersion?: number
-  ): Promise<KnowledgeCardWithRelations> {
-    const existing = await prisma.knowledgeCard.findUnique({ where: { id } })
-
-    if (!existing) {
-      throw notFound('知识卡不存在', { cardId: id })
-    }
-
-    // 检查编辑权限
-    if (!canAccess(user, 'knowledge_card', 'write', { ownerId: existing.creatorId })) {
-      throw forbidden('无权编辑此知识卡', { cardId: id })
-    }
-
-    // 乐观锁检查
-    if (expectedVersion !== undefined && existing.version !== expectedVersion) {
-      throw optimisticLock()
-    }
-
-    // 构建更新数据
-    const updateData: Record<string, unknown> = {}
-    if (data.title !== undefined) updateData.title = data.title
-    if (data.category !== undefined) updateData.category = data.category
-    if (data.tags !== undefined) updateData.tags = data.tags
-    if (data.content !== undefined) updateData.content = data.content
-    if (data.departmentId !== undefined) updateData.departmentId = data.departmentId || null
-    if (data.customerType !== undefined) updateData.customerType = data.customerType || null
-    if (data.source !== undefined) updateData.source = data.source || null
-    if (data.riskNotes !== undefined) updateData.riskNotes = data.riskNotes || null
-    if (data.visibilityScope !== undefined) updateData.visibilityScope = data.visibilityScope
-
-    const card = await prisma.knowledgeCard.update({
-      where: { id },
-      data: updateData,
-      include: {
-        creator: { select: { id: true, name: true, role: true, departmentId: true } },
-        reviewer: { select: { id: true, name: true } },
-      },
-    })
-
-    // 记录审计日志
-    await createAuditLog({
-      userId: user.id,
-      action: 'edit',
-      entityType: 'knowledge_card',
-      entityId: id,
-      details: { title: card.title },
-    })
-
-    logger.info('Knowledge card updated', { cardId: id, userId: user.id })
-
-    return card
-  }
-
-  /**
-   * 删除知识卡
-   */
-  async delete(id: string, user: AuthUser): Promise<void> {
-    const existing = await prisma.knowledgeCard.findUnique({ where: { id } })
-
-    if (!existing) {
-      throw notFound('知识卡不存在', { cardId: id })
-    }
-
-    // 检查删除权限
-    if (!canAccess(user, 'knowledge_card', 'delete')) {
-      throw forbidden('无权删除此知识卡', { cardId: id })
-    }
-
-    await prisma.knowledgeCard.delete({ where: { id } })
-
-    // 记录审计日志
-    await createAuditLog({
-      userId: user.id,
-      action: 'edit',
-      entityType: 'knowledge_card',
-      entityId: id,
-      details: { title: existing.title, action: 'delete' },
-    })
-
-    logger.info('Knowledge card deleted', { cardId: id, userId: user.id })
-  }
-
-  /**
-   * 提交审核
-   */
   async submitForReview(id: string, user: AuthUser): Promise<KnowledgeCardWithRelations> {
-    const existing = await prisma.knowledgeCard.findUnique({ where: { id } })
-
-    if (!existing) {
-      throw notFound('知识卡不存在', { cardId: id })
-    }
-
-    // 检查编辑权限
-    if (!canAccess(user, 'knowledge_card', 'write', { ownerId: existing.creatorId })) {
-      throw forbidden('无权提交此知识卡', { cardId: id })
-    }
-
-    // 检查状态流转：只有 draft 状态可以提交审核
-    if (existing.status !== 'draft') {
-      throw notFound('当前状态不允许提交审核', { cardId: id, status: existing.status })
-    }
-
-    const card = await prisma.knowledgeCard.update({
-      where: { id },
-      data: { status: 'pending_review' },
-      include: {
-        creator: { select: { id: true, name: true, role: true, departmentId: true } },
-        reviewer: { select: { id: true, name: true } },
-      },
-    })
-
-    // 记录审计日志
-    await createAuditLog({
-      userId: user.id,
-      action: 'submit',
-      entityType: 'knowledge_card',
-      entityId: id,
-      details: { title: card.title, fromStatus: existing.status, toStatus: 'pending_review' },
-    })
-
-    logger.info('Knowledge card submitted for review', { cardId: id, userId: user.id })
-
-    return card
+    return this.transition(id, 'pending_review', user)
   }
 
-  /**
-   * 审核通过
-   */
   async approve(id: string, user: AuthUser, comment?: string): Promise<KnowledgeCardWithRelations> {
-    const existing = await prisma.knowledgeCard.findUnique({ where: { id } })
-
-    if (!existing) {
-      throw notFound('知识卡不存在', { cardId: id })
-    }
-
-    // 检查审核权限
-    if (!canAccess(user, 'knowledge_card', 'review')) {
-      throw forbidden('无权审核此知识卡', { cardId: id })
-    }
-
-    // 检查状态流转：只有 pending_review 状态可以审核通过
-    if (existing.status !== 'pending_review') {
-      throw notFound('当前状态不允许审核通过', { cardId: id, status: existing.status })
-    }
-
-    const card = await prisma.knowledgeCard.update({
-      where: { id },
-      data: {
-        status: 'published',
-        reviewerId: user.id,
-        reviewedAt: new Date(),
-        version: existing.version + 1,
-      },
-      include: {
-        creator: { select: { id: true, name: true, role: true, departmentId: true } },
-        reviewer: { select: { id: true, name: true } },
-      },
-    })
-
-    // 记录审计日志
-    await createAuditLog({
-      userId: user.id,
-      action: 'approve',
-      entityType: 'knowledge_card',
-      entityId: id,
-      details: { title: card.title, comment },
-    })
-
-    logger.info('Knowledge card approved', { cardId: id, userId: user.id })
-
-    return card
+    return this.transition(id, 'published', user, { comment, incrementVersion: true })
   }
 
-  /**
-   * 审核驳回
-   */
   async reject(id: string, user: AuthUser, comment: string): Promise<KnowledgeCardWithRelations> {
-    const existing = await prisma.knowledgeCard.findUnique({ where: { id } })
-
-    if (!existing) {
-      throw notFound('知识卡不存在', { cardId: id })
-    }
-
-    // 检查审核权限
-    if (!canAccess(user, 'knowledge_card', 'review')) {
-      throw forbidden('无权审核此知识卡', { cardId: id })
-    }
-
-    // 检查状态流转：只有 pending_review 状态可以驳回
-    if (existing.status !== 'pending_review') {
-      throw notFound('当前状态不允许驳回', { cardId: id, status: existing.status })
-    }
-
-    const card = await prisma.knowledgeCard.update({
-      where: { id },
-      data: {
-        status: 'rejected',
-        reviewerId: user.id,
-        reviewedAt: new Date(),
-      },
-      include: {
-        creator: { select: { id: true, name: true, role: true, departmentId: true } },
-        reviewer: { select: { id: true, name: true } },
-      },
-    })
-
-    // 记录审计日志
-    await createAuditLog({
-      userId: user.id,
-      action: 'reject',
-      entityType: 'knowledge_card',
-      entityId: id,
-      details: { title: card.title, comment },
-    })
-
-    logger.info('Knowledge card rejected', { cardId: id, userId: user.id, comment })
-
-    return card
+    return this.transition(id, 'rejected', user, { comment })
   }
 
-  /**
-   * 归档
-   */
   async archive(id: string, user: AuthUser): Promise<KnowledgeCardWithRelations> {
-    const existing = await prisma.knowledgeCard.findUnique({ where: { id } })
-
-    if (!existing) {
-      throw notFound('知识卡不存在', { cardId: id })
-    }
-
-    // 检查编辑权限
-    if (!canAccess(user, 'knowledge_card', 'write', { ownerId: existing.creatorId })) {
-      throw forbidden('无权归档此知识卡', { cardId: id })
-    }
-
-    // 检查状态流转：只有 published 状态可以归档
-    if (existing.status !== 'published') {
-      throw notFound('当前状态不允许归档', { cardId: id, status: existing.status })
-    }
-
-    const card = await prisma.knowledgeCard.update({
-      where: { id },
-      data: { status: 'archived' },
-      include: {
-        creator: { select: { id: true, name: true, role: true, departmentId: true } },
-        reviewer: { select: { id: true, name: true } },
-      },
-    })
-
-    // 记录审计日志
-    await createAuditLog({
-      userId: user.id,
-      action: 'edit',
-      entityType: 'knowledge_card',
-      entityId: id,
-      details: { title: card.title, action: 'archive' },
-    })
-
-    logger.info('Knowledge card archived', { cardId: id, userId: user.id })
-
-    return card
+    return this.transition(id, 'archived', user)
   }
 }
 

@@ -9,6 +9,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { signToken, createCookieHeader } from '@/lib/jwt'
 import { verifyPassword, checkLoginLock, recordLoginFailure, resetLoginAttempts } from '@/lib/password'
+import logger from '@/lib/logger'
 
 export async function POST(request: NextRequest) {
   try {
@@ -32,6 +33,7 @@ export async function POST(request: NextRequest) {
         departmentId: true,
         status: true,
         passwordHash: true,
+        mustChangePassword: true,
         loginAttempts: true,
         lockedUntil: true,
         department: {
@@ -129,6 +131,7 @@ export async function POST(request: NextRequest) {
         role: user.role,
         departmentId: user.departmentId,
         departmentName: user.department.name,
+        mustChangePassword: user.mustChangePassword,
       },
       expiresAt: expiresAt.toISOString(),
     })
@@ -138,7 +141,7 @@ export async function POST(request: NextRequest) {
 
     return response
   } catch (error) {
-    console.error('Login failed:', error)
+    logger.error('Login failed', error instanceof Error ? error : undefined)
     return NextResponse.json(
       { error: 'Login failed' },
       { status: 500 }

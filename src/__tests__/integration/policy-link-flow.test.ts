@@ -216,7 +216,7 @@ describe('PolicyLink 完整生命周期', () => {
     // collected 状态不能再次标记为 collected
     mockFindUnique.mockResolvedValue(link)
 
-    await expect(service.markAsCollected('link-1', submitterUser)).rejects.toThrow('当前状态不允许标记为已采集')
+    await expect(service.markAsCollected('link-1', submitterUser)).rejects.toThrow('当前状态不允许从已采集流转到已采集')
   })
 
   it('should support pagination and filtering', async () => {

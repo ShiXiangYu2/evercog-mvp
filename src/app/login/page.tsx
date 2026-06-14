@@ -91,8 +91,12 @@ export default function LoginPage() {
         throw new Error(data.error || '登录失败')
       }
 
-      // 登录成功，跳转到首页
-      window.location.href = '/'
+      // 登录成功，检查是否需要改密
+      if (data.user?.mustChangePassword) {
+        window.location.href = '/change-password'
+      } else {
+        window.location.href = '/'
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : '登录失败')
     } finally {
@@ -215,9 +219,6 @@ export default function LoginPage() {
                       )}
                     </button>
                   </div>
-                  <p className="text-xs text-gray-400 mt-1">
-                    默认密码: password123
-                  </p>
                 </div>
               )}
 

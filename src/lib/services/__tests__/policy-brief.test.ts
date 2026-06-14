@@ -235,7 +235,7 @@ describe('PolicyBriefService', () => {
         generatorId: 'other-user',
       })
 
-      await expect(service.submitForReview('brief-1', salesUser)).rejects.toThrow('无权提交此政策简报')
+      await expect(service.submitForReview('brief-1', salesUser)).rejects.toThrow('无权操作此政策简报')
     })
 
     it('should throw for invalid status transition', async () => {
@@ -244,7 +244,7 @@ describe('PolicyBriefService', () => {
         reviewStatus: 'reviewed',
       })
 
-      await expect(service.submitForReview('brief-1', adminUser)).rejects.toThrow('当前状态不允许提交审核')
+      await expect(service.submitForReview('brief-1', adminUser)).rejects.toThrow('当前状态不允许从已审核流转到待审核')
     })
   })
 
@@ -298,7 +298,7 @@ describe('PolicyBriefService', () => {
         reviewStatus: 'draft',
       })
 
-      await expect(service.approve('brief-1', adminUser)).rejects.toThrow('当前状态不允许审核通过')
+      await expect(service.approve('brief-1', adminUser)).rejects.toThrow('当前状态不允许从草稿流转到已审核')
     })
   })
 

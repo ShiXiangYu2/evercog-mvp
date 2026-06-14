@@ -6,6 +6,9 @@ generator client {
 }
 
 datasource db {
+  // 开发环境使用 sqlite，生产环境使用 postgresql
+  // 通过切换此文件或使用环境变量覆盖来切换 provider
+  // 生产部署时，请将此行改为：provider = "postgresql"
   provider = "sqlite"
   url      = env("DATABASE_URL")
 }
@@ -31,6 +34,7 @@ model User {
   name          String // 用户姓名
   email         String? // 邮箱（演示模式可选）
   passwordHash  String? // 密码哈希（MVP 阶段可选，生产环境必须）
+  mustChangePassword Boolean @default(false) // 首次登录必须改密
   departmentId  String
   department    Department @relation(fields: [departmentId], references: [id])
   role          String // 角色：sales, customer_service, operations, finance, ai_info, admin, mentor, trainee

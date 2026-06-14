@@ -30,11 +30,22 @@ const DEFAULT_EXPIRES_IN = '24h'
 
 // ==================== 密钥管理 ====================
 
+const DEFAULT_JWT_SECRET = 'change-this-to-a-strong-random-string-in-production'
+
 function getSecret(): Uint8Array {
   const secret = process.env.JWT_SECRET
   if (!secret) {
     throw new Error('JWT_SECRET environment variable is required')
   }
+
+  // 生产环境检测弱密钥
+  if (process.env.NODE_ENV === 'production' && secret === DEFAULT_JWT_SECRET) {
+    throw new Error(
+      'JWT_SECRET is using the default value! ' +
+      'Generate a strong secret: node -e "console.log(require(\'crypto\').randomBytes(32).toString(\'hex\'))"'
+    )
+  }
+
   return new TextEncoder().encode(secret)
 }
 

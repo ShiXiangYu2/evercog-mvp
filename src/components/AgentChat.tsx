@@ -15,6 +15,7 @@ import {
   Folder,
   Paperclip,
 } from 'lucide-react'
+import { sanitizeMarkdownHtml } from '@/lib/sanitize'
 
 interface ChatMessage {
   role: 'user' | 'agent'
@@ -198,20 +199,23 @@ export default function AgentChat({ onModeChange, initialMessages, conversationI
     }
   }
 
-  // Markdown 渲染
+  // Markdown 渲染（使用 DOMPurify 过滤 XSS）
   const renderContent = (content: string) => {
     return content.split('\n').map((line, i) => {
       let processed = line.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
       processed = processed.replace(/`(.+?)`/g, '<code class="px-1.5 py-0.5 bg-gray-100 rounded text-xs font-mono">$1</code>')
       processed = processed.replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2" class="text-[#10B981] hover:underline">$1</a>')
 
+      // 净化 HTML，过滤 XSS 攻击向量
+      const safeHtml = sanitizeMarkdownHtml(processed)
+
       if (line.startsWith('• ') || line.startsWith('- ')) {
-        return <li key={i} className="ml-4 list-disc" dangerouslySetInnerHTML={{ __html: processed.substring(2) }} />
+        return <li key={i} className="ml-4 list-disc" dangerouslySetInnerHTML={{ __html: sanitizeMarkdownHtml(safeHtml.substring(2)) }} />
       }
       if (line.match(/^\d+\./)) {
-        return <li key={i} className="ml-4 list-decimal" dangerouslySetInnerHTML={{ __html: processed.replace(/^\d+\.\s*/, '') }} />
+        return <li key={i} className="ml-4 list-decimal" dangerouslySetInnerHTML={{ __html: sanitizeMarkdownHtml(safeHtml.replace(/^\d+\.\s*/, '')) }} />
       }
-      return <p key={i} className={line.trim() === '' ? 'h-2' : ''} dangerouslySetInnerHTML={{ __html: processed }} />
+      return <p key={i} className={line.trim() === '' ? 'h-2' : ''} dangerouslySetInnerHTML={{ __html: safeHtml }} />
     })
   }
 

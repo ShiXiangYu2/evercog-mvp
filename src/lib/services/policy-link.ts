@@ -1,34 +1,21 @@
 /**
  * PolicyLink 服务
  *
- * 处理政策链接的 CRUD 操作
+ * 基于 BaseEntityService 的政策链接 CRUD 和状态流转
  */
+import { BaseEntityService } from './base-service'
 import { prisma } from '../prisma'
-import { createAuditLog } from '../audit'
-import { canAccess, type AuthUser } from '../permission-guard'
-import { notFound, forbidden, type ServiceError } from '../service-error'
-import logger from '../logger'
+import type { AuthUser, EntityConfig, ListFilters, PaginatedResult } from './base-types'
 
 // ==================== 类型定义 ====================
 
 export type PolicyLinkStatus = 'submitted' | 'collected' | 'brief_generated' | 'reviewed' | 'pushed' | 'archived'
 
-export interface ListFilters {
-  search?: string
+export interface PolicyLinkListFilters extends ListFilters {
   status?: string
   source?: string
   customerType?: string
   submitterId?: string
-  page?: number
-  pageSize?: number
-}
-
-export interface PaginatedResult<T> {
-  items: T[]
-  total: number
-  page: number
-  pageSize: number
-  totalPages: number
 }
 
 export interface CreatePolicyLinkInput {
@@ -63,219 +50,93 @@ export interface PolicyLinkWithRelations {
   brief?: { id: string; title: string; reviewStatus: string } | null
 }
 
+// ==================== 实体配置 ====================
+
+const POLICY_LINK_CONFIG: EntityConfig = {
+  entityType: 'policy_link',
+  entityLabel: '政策链接',
+  statusField: 'status',
+  ownerField: 'submitterId',
+  searchFields: ['title', 'url'],
+  transitions: {
+    submitted: ['collected'],
+    collected: ['brief_generated'],
+    brief_generated: ['reviewed'],
+    reviewed: ['pushed'],
+    pushed: ['archived'],
+    archived: [],
+  },
+  statusLabels: {
+    submitted: '已提交',
+    collected: '已采集',
+    brief_generated: '已生成简报',
+    reviewed: '已审核',
+    pushed: '已推送',
+    archived: '已归档',
+  },
+}
+
 // ==================== PolicyLinkService ====================
 
-export class PolicyLinkService {
-  /**
-   * 列表查询
-   */
-  async list(filters: ListFilters, user: AuthUser): Promise<PaginatedResult<PolicyLinkWithRelations>> {
-    const { search, status, source, customerType, submitterId, page = 1, pageSize = 20 } = filters
+export class PolicyLinkService extends BaseEntityService<
+  PolicyLinkWithRelations,
+  CreatePolicyLinkInput,
+  UpdatePolicyLinkInput
+> {
+  constructor() {
+    super(POLICY_LINK_CONFIG)
+  }
 
-    const where: Record<string, unknown> = {}
+  protected get model() {
+    return prisma.policyLink
+  }
 
-    // 搜索条件
-    if (search) {
-      where.OR = [
-        { title: { contains: search } },
-        { url: { contains: search } },
-      ]
-    }
-
-    if (status) where.status = status
-    if (source) where.source = source
-    if (customerType) where.customerType = customerType
-    if (submitterId) where.submitterId = submitterId
-
-    const [items, total] = await Promise.all([
-      prisma.policyLink.findMany({
-        where,
-        include: {
-          submitter: { select: { id: true, name: true, role: true } },
-          brief: { select: { id: true, title: true, reviewStatus: true } },
-        },
-        orderBy: { createdAt: 'desc' },
-        skip: (page - 1) * pageSize,
-        take: pageSize,
-      }),
-      prisma.policyLink.count({ where }),
-    ])
-
+  protected get include() {
     return {
-      items,
-      total,
-      page,
-      pageSize,
-      totalPages: Math.ceil(total / pageSize),
+      submitter: { select: { id: true, name: true, role: true } },
+      brief: { select: { id: true, title: true, reviewStatus: true } },
     }
   }
 
-  /**
-   * 获取单个政策链接
-   */
-  async getById(id: string, user: AuthUser): Promise<PolicyLinkWithRelations> {
-    const link = await prisma.policyLink.findUnique({
-      where: { id },
-      include: {
-        submitter: { select: { id: true, name: true, role: true } },
-        brief: { select: { id: true, title: true, reviewStatus: true } },
-      },
-    })
-
-    if (!link) {
-      throw notFound('政策链接不存在', { linkId: id })
-    }
-
-    return link
+  protected toResponse(record: any): PolicyLinkWithRelations {
+    return record
   }
 
-  /**
-   * 创建政策链接
-   */
-  async create(data: CreatePolicyLinkInput, user: AuthUser): Promise<PolicyLinkWithRelations> {
-    const link = await prisma.policyLink.create({
-      data: {
-        url: data.url,
-        title: data.title || null,
-        source: data.source || null,
-        submitterId: user.id,
-        departmentId: data.departmentId || user.departmentId,
-        customerType: data.customerType || null,
-        status: 'submitted',
-      },
-      include: {
-        submitter: { select: { id: true, name: true, role: true } },
-        brief: { select: { id: true, title: true, reviewStatus: true } },
-      },
-    })
-
-    // 记录审计日志
-    await createAuditLog({
-      userId: user.id,
-      action: 'create',
-      entityType: 'policy_link',
-      entityId: link.id,
-      details: { url: link.url, title: link.title },
-    })
-
-    logger.info('Policy link created', { linkId: link.id, userId: user.id })
-
-    return link
+  protected buildCreateData(data: CreatePolicyLinkInput, user: AuthUser): Record<string, unknown> {
+    return {
+      url: data.url,
+      title: data.title || null,
+      source: data.source || null,
+      submitterId: user.id,
+      departmentId: data.departmentId || user.departmentId,
+      customerType: data.customerType || null,
+      status: 'submitted',
+    }
   }
 
-  /**
-   * 更新政策链接
-   */
-  async update(id: string, data: UpdatePolicyLinkInput, user: AuthUser): Promise<PolicyLinkWithRelations> {
-    const existing = await prisma.policyLink.findUnique({ where: { id } })
-
-    if (!existing) {
-      throw notFound('政策链接不存在', { linkId: id })
-    }
-
-    // 检查编辑权限：只有提交者或管理员可编辑
-    if (!canAccess(user, 'policy_link', 'write', { ownerId: existing.submitterId })) {
-      throw forbidden('无权编辑此政策链接', { linkId: id })
-    }
-
-    // 构建更新数据
+  protected buildUpdateData(data: UpdatePolicyLinkInput): Record<string, unknown> {
     const updateData: Record<string, unknown> = {}
     if (data.title !== undefined) updateData.title = data.title
     if (data.source !== undefined) updateData.source = data.source
     if (data.departmentId !== undefined) updateData.departmentId = data.departmentId
     if (data.customerType !== undefined) updateData.customerType = data.customerType
     if (data.status !== undefined) updateData.status = data.status
-
-    const link = await prisma.policyLink.update({
-      where: { id },
-      data: updateData,
-      include: {
-        submitter: { select: { id: true, name: true, role: true } },
-        brief: { select: { id: true, title: true, reviewStatus: true } },
-      },
-    })
-
-    // 记录审计日志
-    await createAuditLog({
-      userId: user.id,
-      action: 'edit',
-      entityType: 'policy_link',
-      entityId: id,
-      details: { url: link.url, title: link.title },
-    })
-
-    logger.info('Policy link updated', { linkId: id, userId: user.id })
-
-    return link
+    return updateData
   }
 
-  /**
-   * 删除政策链接
-   */
-  async delete(id: string, user: AuthUser): Promise<void> {
-    const existing = await prisma.policyLink.findUnique({ where: { id } })
+  // ==================== 过滤条件 ====================
 
-    if (!existing) {
-      throw notFound('政策链接不存在', { linkId: id })
-    }
-
-    // 检查删除权限：仅管理员可删除
-    if (!canAccess(user, 'policy_link', 'delete')) {
-      throw forbidden('无权删除此政策链接', { linkId: id })
-    }
-
-    await prisma.policyLink.delete({ where: { id } })
-
-    // 记录审计日志
-    await createAuditLog({
-      userId: user.id,
-      action: 'edit',
-      entityType: 'policy_link',
-      entityId: id,
-      details: { url: existing.url, title: existing.title, action: 'delete' },
-    })
-
-    logger.info('Policy link deleted', { linkId: id, userId: user.id })
+  protected applyFilters(where: Record<string, unknown>, filters: Record<string, unknown>): void {
+    if (filters.status) where.status = filters.status
+    if (filters.source) where.source = filters.source
+    if (filters.customerType) where.customerType = filters.customerType
+    if (filters.submitterId) where.submitterId = filters.submitterId
   }
 
-  /**
-   * 标记为已采集
-   */
+  // ==================== 便捷方法 ====================
+
   async markAsCollected(id: string, user: AuthUser): Promise<PolicyLinkWithRelations> {
-    const existing = await prisma.policyLink.findUnique({ where: { id } })
-
-    if (!existing) {
-      throw notFound('政策链接不存在', { linkId: id })
-    }
-
-    if (existing.status !== 'submitted') {
-      throw notFound('当前状态不允许标记为已采集', { linkId: id, status: existing.status })
-    }
-
-    const link = await prisma.policyLink.update({
-      where: { id },
-      data: {
-        status: 'collected',
-        collectedAt: new Date(),
-      },
-      include: {
-        submitter: { select: { id: true, name: true, role: true } },
-        brief: { select: { id: true, title: true, reviewStatus: true } },
-      },
-    })
-
-    // 记录审计日志
-    await createAuditLog({
-      userId: user.id,
-      action: 'edit',
-      entityType: 'policy_link',
-      entityId: id,
-      details: { url: link.url, action: 'mark_as_collected' },
-    })
-
-    logger.info('Policy link marked as collected', { linkId: id, userId: user.id })
-
-    return link
+    return this.transition(id, 'collected', user)
   }
 }
 

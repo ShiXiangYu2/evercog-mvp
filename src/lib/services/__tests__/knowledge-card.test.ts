@@ -8,12 +8,13 @@ import type { AuthUser } from '../../permission-guard'
 
 // ==================== Mock 函数（使用 vi.hoisted） ====================
 
-const { mockFindMany, mockFindUnique, mockCreate, mockUpdate, mockDelete } = vi.hoisted(() => ({
+const { mockFindMany, mockFindUnique, mockCreate, mockUpdate, mockDelete, mockCount } = vi.hoisted(() => ({
   mockFindMany: vi.fn(),
   mockFindUnique: vi.fn(),
   mockCreate: vi.fn(),
   mockUpdate: vi.fn(),
   mockDelete: vi.fn(),
+  mockCount: vi.fn(),
 }))
 
 vi.mock('../../prisma', () => ({
@@ -24,6 +25,7 @@ vi.mock('../../prisma', () => ({
       create: mockCreate,
       update: mockUpdate,
       delete: mockDelete,
+      count: mockCount,
     },
   },
 }))
@@ -106,6 +108,7 @@ describe('KnowledgeCardService', () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
+    mockCount.mockResolvedValue(0)
     service = new KnowledgeCardService()
   })
 
@@ -317,7 +320,7 @@ describe('KnowledgeCardService', () => {
         creatorId: 'other-user',
       })
 
-      await expect(service.submitForReview('card-1', salesUser2)).rejects.toThrow('无权提交此知识卡')
+      await expect(service.submitForReview('card-1', salesUser2)).rejects.toThrow('无权操作此知识卡')
     })
 
     it('should throw for invalid status transition', async () => {
@@ -326,7 +329,7 @@ describe('KnowledgeCardService', () => {
         status: 'published',
       })
 
-      await expect(service.submitForReview('card-1', adminUser)).rejects.toThrow('当前状态不允许提交审核')
+      await expect(service.submitForReview('card-1', adminUser)).rejects.toThrow('当前状态不允许从已发布流转到待审核')
     })
   })
 
@@ -384,7 +387,7 @@ describe('KnowledgeCardService', () => {
         status: 'draft',
       })
 
-      await expect(service.approve('card-1', adminUser)).rejects.toThrow('当前状态不允许审核通过')
+      await expect(service.approve('card-1', adminUser)).rejects.toThrow('当前状态不允许从草稿流转到已发布')
     })
   })
 
@@ -460,7 +463,7 @@ describe('KnowledgeCardService', () => {
         status: 'draft',
       })
 
-      await expect(service.archive('card-1', adminUser)).rejects.toThrow('当前状态不允许归档')
+      await expect(service.archive('card-1', adminUser)).rejects.toThrow('当前状态不允许从草稿流转到已归档')
     })
   })
 
@@ -468,13 +471,14 @@ describe('KnowledgeCardService', () => {
 
   describe('list', () => {
     it('should list cards with pagination', async () => {
-      const cards = Array.from({ length: 5 }, (_, i) => ({
+      const allCards = Array.from({ length: 5 }, (_, i) => ({
         ...mockCard,
         id: `card-${i}`,
         title: `卡片 ${i}`,
       }))
 
-      mockFindMany.mockResolvedValue(cards)
+      // 返回所有卡片（新实现在内存中分页）
+      mockFindMany.mockResolvedValue(allCards)
 
       const result = await service.list({ page: 1, pageSize: 2 }, salesUser)
 
@@ -487,6 +491,7 @@ describe('KnowledgeCardService', () => {
       mockFindMany.mockResolvedValue([
         { ...mockCard, status: 'published' },
       ])
+      mockCount.mockResolvedValue(1)
 
       const result = await service.list({ status: 'published' }, salesUser)
 
@@ -498,6 +503,7 @@ describe('KnowledgeCardService', () => {
       mockFindMany.mockResolvedValue([
         { ...mockCard, category: 'faq' },
       ])
+      mockCount.mockResolvedValue(1)
 
       const result = await service.list({ category: 'faq' }, salesUser)
 
@@ -510,6 +516,7 @@ describe('KnowledgeCardService', () => {
         { ...mockCard, creatorId: 'sales-1', status: 'draft' },
         { ...mockCard, id: 'card-2', creatorId: 'sales-2', status: 'draft' },
       ])
+      mockCount.mockResolvedValue(2)
 
       const result = await service.list({}, salesUser)
 

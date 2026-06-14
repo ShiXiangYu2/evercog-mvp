@@ -239,7 +239,7 @@ describe('PolicyLinkService', () => {
         status: 'collected',
       })
 
-      await expect(service.markAsCollected('link-1', adminUser)).rejects.toThrow('当前状态不允许标记为已采集')
+      await expect(service.markAsCollected('link-1', adminUser)).rejects.toThrow('当前状态不允许从已采集流转到已采集')
     })
   })
 

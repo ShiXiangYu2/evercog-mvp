@@ -220,7 +220,7 @@ describe('KnowledgeCard 完整状态流转', () => {
       email: 'other@example.com',
     }
 
-    await expect(service.submitForReview('card-1', otherUser)).rejects.toThrow('无权提交此知识卡')
+    await expect(service.submitForReview('card-1', otherUser)).rejects.toThrow('无权操作此知识卡')
 
     // 非审核者不能审核
     const pendingCard = { ...draftCard, status: 'pending_review' }

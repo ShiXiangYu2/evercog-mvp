@@ -244,13 +244,13 @@ describe('PolicyBrief 完整审核流程', () => {
 
     mockFindUnique.mockResolvedValue(draftBrief)
 
-    await expect(service.approve('brief-1', reviewerUser)).rejects.toThrow('当前状态不允许审核通过')
+    await expect(service.approve('brief-1', reviewerUser)).rejects.toThrow('当前状态不允许从草稿流转到已审核')
 
     // reviewed 状态不能再次提交审核
     const reviewedBrief = { ...draftBrief, reviewStatus: 'reviewed' }
     mockFindUnique.mockResolvedValue(reviewedBrief)
 
-    await expect(service.submitForReview('brief-1', generatorUser)).rejects.toThrow('当前状态不允许提交审核')
+    await expect(service.submitForReview('brief-1', generatorUser)).rejects.toThrow('当前状态不允许从已审核流转到待审核')
   })
 
   it('should support pagination and filtering', async () => {

@@ -212,6 +212,15 @@ export function isRateLimited(
   return { limited: false }
 }
 
+// ==================== 测试工具 ====================
+
+/**
+ * 清空速率限制存储（仅用于测试）
+ */
+export function resetRateLimitStore(): void {
+  store.clear()
+}
+
 // ==================== 导出 ====================
 
 export default {
@@ -219,6 +228,7 @@ export default {
   getClientIdentifier,
   createRateLimitResponse,
   isRateLimited,
+  resetRateLimitStore,
   ANONYMOUS_RATE_LIMIT,
   AUTHENTICATED_RATE_LIMIT,
   LOGIN_RATE_LIMIT,

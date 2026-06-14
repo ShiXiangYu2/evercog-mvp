@@ -6,7 +6,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { withAuth } from '@/lib/auth'
 import { validateBody, createKnowledgeCardSchema } from '@/lib/validation'
-import { getKnowledgeCardService } from '@/lib/services/knowledge-card'
+import { getKnowledgeCardService, type KnowledgeCardListFilters } from '@/lib/services/knowledge-card'
 import { handleServiceError } from '@/lib/service-error'
 
 // GET /api/knowledge-cards - 列表查询
@@ -24,7 +24,7 @@ export const GET = withAuth(async (request: NextRequest, { user }) => {
         tags: searchParams.get('tags') || undefined,
         page: parseInt(searchParams.get('page') || '1'),
         pageSize: parseInt(searchParams.get('pageSize') || '20'),
-      },
+      } as KnowledgeCardListFilters,
       user
     )
 

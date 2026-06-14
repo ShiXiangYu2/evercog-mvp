@@ -5,6 +5,7 @@
  * 所有 API 路由必须使用这些错误类返回响应
  */
 import { NextResponse } from 'next/server'
+import logger from './logger'
 
 // ==================== 错误响应类型 ====================
 
@@ -140,7 +141,7 @@ export class ExternalServiceError extends AppError {
 export function handleApiError(error: unknown): NextResponse<ErrorResponse> {
   // 已知的应用错误
   if (error instanceof AppError) {
-    console.error(`[${error.code}] ${error.message}`, error.details)
+    logger.error(`[${error.code}] ${error.message}`, error)
     return error.toResponse()
   }
 
@@ -165,12 +166,20 @@ export function handleApiError(error: unknown): NextResponse<ErrorResponse> {
       return new ConflictError('Record already exists').toResponse()
     }
 
-    console.error('[PRISMA_ERROR]', prismaError.code, prismaError.message)
+    logger.error('[PRISMA_ERROR]', error instanceof Error ? error : undefined, { code: prismaError.code })
     return new AppError('Database error', 'DATABASE_ERROR', 500).toResponse()
   }
 
-  // 未知错误
-  console.error('[UNKNOWN_ERROR]', error)
+  // 未知错误 - 发送到 Sentry
+  logger.error('[UNKNOWN_ERROR]', error instanceof Error ? error : undefined)
+  try {
+    // 动态导入 Sentry，避免未配置时影响
+    const Sentry = require('@sentry/nextjs')
+    Sentry.captureException(error)
+  } catch {
+    // Sentry 未配置时静默失败
+  }
+
   return new AppError(
     'An unexpected error occurred',
     'INTERNAL_ERROR',

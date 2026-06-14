@@ -4,6 +4,7 @@
  * 所有 Service 方法抛出 ServiceError，路由层统一转换为 HTTP 响应
  */
 import { NextResponse } from 'next/server'
+import logger from './logger'
 
 // ==================== 错误码 ====================
 
@@ -88,7 +89,7 @@ export function handleServiceError(error: unknown): NextResponse {
     return error.toResponse()
   }
 
-  console.error('Unexpected error:', error)
+  logger.error('Unexpected error', error instanceof Error ? error : undefined)
   return NextResponse.json(
     { error: '服务器内部错误' },
     { status: 500 }

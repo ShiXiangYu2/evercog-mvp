@@ -1,32 +1,37 @@
 /**
  * Services 统一导出
  */
+
+// 基类和类型
+export { BaseEntityService } from './base-service'
+export type { AuthUser, EntityConfig, ListFilters, PaginatedResult } from './base-types'
+
+// KnowledgeCard
 export { KnowledgeCardService, getKnowledgeCardService } from './knowledge-card'
 export type {
   KnowledgeCardStatus,
   VisibilityScope,
-  ListFilters as KnowledgeCardListFilters,
-  PaginatedResult as KnowledgeCardPaginatedResult,
+  KnowledgeCardListFilters,
   CreateKnowledgeCardInput,
   UpdateKnowledgeCardInput,
   KnowledgeCardWithRelations,
 } from './knowledge-card'
 
+// PolicyLink
 export { PolicyLinkService, getPolicyLinkService } from './policy-link'
 export type {
   PolicyLinkStatus,
-  ListFilters as PolicyLinkListFilters,
-  PaginatedResult as PolicyLinkPaginatedResult,
+  PolicyLinkListFilters,
   CreatePolicyLinkInput,
   UpdatePolicyLinkInput,
   PolicyLinkWithRelations,
 } from './policy-link'
 
+// PolicyBrief
 export { PolicyBriefService, getPolicyBriefService } from './policy-brief'
 export type {
   BriefReviewStatus,
-  ListFilters as PolicyBriefListFilters,
-  PaginatedResult as PolicyBriefPaginatedResult,
+  PolicyBriefListFilters,
   CreatePolicyBriefInput,
   UpdatePolicyBriefInput,
   PolicyBriefWithRelations,
