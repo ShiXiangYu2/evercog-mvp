@@ -35,18 +35,69 @@ const quickCommands = [
   { command: '/帮助', label: '帮助', icon: HelpCircle },
 ]
 
-interface AgentChatProps {
-  onModeChange?: (mode: 'welcome' | 'chat') => void
+interface Conversation {
+  id: string
+  title: string
+  messages: ChatMessage[]
+  createdAt: string
 }
 
-export default function AgentChat({ onModeChange }: AgentChatProps) {
+interface AgentChatProps {
+  onModeChange?: (mode: 'welcome' | 'chat') => void
+  initialMessages?: ChatMessage[]
+  conversationId?: string
+}
+
+export default function AgentChat({ onModeChange, initialMessages, conversationId }: AgentChatProps) {
   const [mode, setMode] = useState<'welcome' | 'chat'>('welcome')
   const [messages, setMessages] = useState<ChatMessage[]>([])
+
+  // 加载历史对话
+  useEffect(() => {
+    if (initialMessages && initialMessages.length > 0) {
+      setMessages(initialMessages)
+      setMode('chat')
+    }
+  }, [conversationId])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+
+  // 暴露加载对话方法
+  const loadConversation = (convMessages: ChatMessage[]) => {
+    setMessages(convMessages)
+    setMode('chat')
+  }
+
+  // 保存对话到 localStorage
+  const saveConversation = () => {
+    if (messages.length === 0) return
+    const history: Conversation[] = JSON.parse(localStorage.getItem('agent-chat-history') || '[]')
+    const firstUserMsg = messages.find(m => m.role === 'user')
+    const title = firstUserMsg ? firstUserMsg.content.substring(0, 30) : '新对话'
+    const newConv: Conversation = {
+      id: Date.now().toString(),
+      title,
+      messages,
+      createdAt: new Date().toISOString(),
+    }
+    // 避免重复保存
+    const exists = history.some(h => h.messages.length === messages.length && h.messages[0]?.content === messages[0]?.content)
+    if (!exists) {
+      history.unshift(newConv)
+      if (history.length > 20) history.pop()
+      localStorage.setItem('agent-chat-history', JSON.stringify(history))
+    }
+  }
+
+  // 对话变化时自动保存
+  useEffect(() => {
+    if (mode === 'chat' && messages.length > 0) {
+      saveConversation()
+    }
+  }, [messages])
 
   // 通知父组件模式变化
   useEffect(() => {

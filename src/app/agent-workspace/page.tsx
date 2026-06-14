@@ -53,12 +53,35 @@ interface AgentWorkspaceData {
   }
 }
 
+interface ChatMessage {
+  role: 'user' | 'agent'
+  content: string
+  citations?: Array<{ cardId: string; title: string; category: string; reviewerName?: string }>
+  timestamp: string
+}
+
+interface Conversation {
+  id: string
+  title: string
+  messages: ChatMessage[]
+  createdAt: string
+}
+
 export default function AgentWorkspacePage() {
   const [data, setData] = useState<AgentWorkspaceData | null>(null)
   const [loading, setLoading] = useState(true)
   const [chatMode, setChatMode] = useState<'welcome' | 'chat'>('welcome')
   const [showHistory, setShowHistory] = useState(false)
+  const [history, setHistory] = useState<Conversation[]>([])
+  const [currentConversationId, setCurrentConversationId] = useState<string | undefined>()
+  const [currentMessages, setCurrentMessages] = useState<ChatMessage[]>([])
   const historyRef = useRef<HTMLDivElement>(null)
+
+  // 加载历史记录
+  useEffect(() => {
+    const saved = JSON.parse(localStorage.getItem('agent-chat-history') || '[]')
+    setHistory(saved)
+  }, [chatMode])
 
   // 点击外部关闭下拉框
   useEffect(() => {
@@ -72,6 +95,12 @@ export default function AgentWorkspacePage() {
     }
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [showHistory])
+
+  const loadConversation = (conv: Conversation) => {
+    setCurrentConversationId(conv.id)
+    setCurrentMessages(conv.messages)
+    setShowHistory(false)
+  }
 
   useEffect(() => {
     fetch('/api/agent-workspace', { credentials: 'same-origin' })
@@ -151,22 +180,31 @@ export default function AgentWorkspacePage() {
                 <p className="text-sm font-bold text-gray-900">会话历史</p>
               </div>
               <div className="max-h-64 overflow-y-auto">
-                <div className="px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-gray-50">
-                  <p className="text-sm font-medium text-gray-900 truncate">帮我查一下最近的新办企业</p>
-                  <p className="text-xs text-gray-400 mt-1">今天 14:32</p>
-                </div>
-                <div className="px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-gray-50">
-                  <p className="text-sm font-medium text-gray-900 truncate">客户续费涨价怎么处理？</p>
-                  <p className="text-xs text-gray-400 mt-1">今天 10:15</p>
-                </div>
-                <div className="px-4 py-3 hover:bg-gray-50 cursor-pointer">
-                  <p className="text-sm font-medium text-gray-900 truncate">小微企业税收优惠政策</p>
-                  <p className="text-xs text-gray-400 mt-1">昨天 16:48</p>
-                </div>
+                {history.length === 0 ? (
+                  <div className="px-4 py-6 text-center">
+                    <p className="text-sm text-gray-400">暂无历史记录</p>
+                  </div>
+                ) : (
+                  history.slice(0, 10).map((conv) => (
+                    <div
+                      key={conv.id}
+                      onClick={() => loadConversation(conv)}
+                      className="px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-gray-50 transition-colors"
+                    >
+                      <p className="text-sm font-medium text-gray-900 truncate">{conv.title}</p>
+                      <p className="text-xs text-gray-400 mt-1">
+                        {new Date(conv.createdAt).toLocaleDateString('zh-CN')} {new Date(conv.createdAt).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })}
+                        <span className="ml-2 text-gray-300">· {conv.messages.length} 条消息</span>
+                      </p>
+                    </div>
+                  ))
+                )}
               </div>
-              <div className="px-4 py-3 border-t border-gray-100 bg-gray-50/50">
-                <button className="text-xs text-[#10B981] font-medium hover:underline">查看全部历史 →</button>
-              </div>
+              {history.length > 10 && (
+                <div className="px-4 py-3 border-t border-gray-100 bg-gray-50/50">
+                  <button className="text-xs text-[#10B981] font-medium hover:underline">查看全部历史 →</button>
+                </div>
+              )}
             </div>
           )}
           <span className="text-sm text-gray-400">{new Date().toLocaleDateString('zh-CN')}</span>
@@ -175,7 +213,11 @@ export default function AgentWorkspacePage() {
 
       {/* 会话窗口 */}
       <div className="mb-6">
-        <AgentChat onModeChange={setChatMode} />
+        <AgentChat
+          onModeChange={setChatMode}
+          initialMessages={currentMessages}
+          conversationId={currentConversationId}
+        />
       </div>
 
       {/* 下方卡片 - 仅在初始状态显示 */}
