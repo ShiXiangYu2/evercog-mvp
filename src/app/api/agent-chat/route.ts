@@ -116,31 +116,7 @@ export const POST = withAuth(async (request: NextRequest, { user }) => {
     const searchResults = await searchKnowledgeCards(trimmed, user)
     const retrievedCards = searchResults.map((r) => r.card)
 
-    if (retrievedCards.length === 0) {
-      // 未找到匹配 - 识别知识缺口
-      const gap = await prisma.knowledgeGap.create({
-        data: {
-          question: trimmed,
-          frequency: 1,
-          priority: 'high',
-          status: 'pending',
-          suggestedAction: 'create_card',
-        },
-      })
-
-      const reply = `❓ 当前没有找到与"${trimmed.substring(0, 30)}"相关的可信经验。\n\n已将此问题记录为知识缺口，系统将自动推动导师补充。\n\n您也可以：\n• 查看[知识缺口管理](/knowledge-gaps)了解详情\n• 联系导师手动补充相关知识卡`
-
-      return NextResponse.json({
-        message: {
-          role: 'agent',
-          content: reply,
-          timestamp: new Date().toISOString(),
-        },
-        gap: { id: gap.id, question: gap.question },
-      })
-    }
-
-    // 有匹配 - 生成引用型回答
+    // 即使没命中知识卡，也用 LLM 生成回复
     const llm = getLLMProvider()
     const reply = await llm.generateExperienceReply({
       question: trimmed,
@@ -158,6 +134,20 @@ export const POST = withAuth(async (request: NextRequest, { user }) => {
       })),
     })
 
+    // 未找到匹配 - 记录知识缺口（但仍返回 LLM 回复）
+    let gap = null
+    if (retrievedCards.length === 0) {
+      gap = await prisma.knowledgeGap.create({
+        data: {
+          question: trimmed,
+          frequency: 1,
+          priority: 'high',
+          status: 'pending',
+          suggestedAction: 'create_card',
+        },
+      })
+    }
+
     // 保存查询记录
     await prisma.experienceQuery.create({
       data: {
@@ -170,13 +160,13 @@ export const POST = withAuth(async (request: NextRequest, { user }) => {
         salesScript: reply.salesScript,
         riskReminder: reply.riskReminder,
         citedSources: JSON.stringify(reply.citedSources),
-        status: 'generated',
+        status: retrievedCards.length > 0 ? 'generated' : 'pending',
       },
     })
 
     // 构建回复内容
     let content = ''
-    if (reply.policyExplanation) content += `💡 **建议做法：**\n${reply.policyExplanation}\n\n`
+    if (reply.policyExplanation) content += `${reply.policyExplanation}\n\n`
     if (reply.riskReminder) content += `⚠️ **风险提醒：** ${reply.riskReminder}\n\n`
     if (reply.serviceOpportunity) content += `📌 **服务机会：** ${reply.serviceOpportunity}\n\n`
     if (reply.salesScript) content += `💬 **参考话术：** ${reply.salesScript}\n\n`
@@ -192,20 +182,26 @@ export const POST = withAuth(async (request: NextRequest, { user }) => {
       }
     }
 
+    // 如果没有命中知识卡，加提示
+    if (retrievedCards.length === 0) {
+      content += '\n💡 *以上为通用建议，暂未匹配到经过审核的可信经验。如需更精准的回答，建议补充相关知识卡。*'
+    }
+
     await createAuditLog({
       userId: user.id,
-      action: 'generate',
+      action: retrievedCards.length > 0 ? 'generate' : 'create',
       entityType: 'experience_query',
-      details: { type: 'agent_chat', cardCount: retrievedCards.length },
+      details: { type: 'agent_chat', cardCount: retrievedCards.length, hasGap: !!gap },
     })
 
     return NextResponse.json({
       message: {
         role: 'agent',
-        content: content || '已为您检索到相关经验，请查看引用来源。',
+        content: content || '已为您处理，请查看以上信息。',
         citations: reply.citedSources,
         timestamp: new Date().toISOString(),
       },
+      ...(gap ? { gap: { id: gap.id, question: gap.question } } : {}),
     })
   } catch (error) {
     logger.error('Agent chat error', error as Error)

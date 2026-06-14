@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import {
   Bot,
@@ -14,6 +14,7 @@ import {
   BookOpen,
   Target,
   Calendar,
+  History,
 } from 'lucide-react'
 import AgentChat from '@/components/AgentChat'
 
@@ -55,6 +56,22 @@ interface AgentWorkspaceData {
 export default function AgentWorkspacePage() {
   const [data, setData] = useState<AgentWorkspaceData | null>(null)
   const [loading, setLoading] = useState(true)
+  const [chatMode, setChatMode] = useState<'welcome' | 'chat'>('welcome')
+  const [showHistory, setShowHistory] = useState(false)
+  const historyRef = useRef<HTMLDivElement>(null)
+
+  // 点击外部关闭下拉框
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (historyRef.current && !historyRef.current.contains(e.target as Node)) {
+        setShowHistory(false)
+      }
+    }
+    if (showHistory) {
+      document.addEventListener('mousedown', handleClickOutside)
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [showHistory])
 
   useEffect(() => {
     fetch('/api/agent-workspace', { credentials: 'same-origin' })
@@ -118,19 +135,51 @@ export default function AgentWorkspacePage() {
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-2xl font-extrabold text-gray-900">GenericAgent 工作台</h1>
-          <p className="text-sm text-gray-500 mt-1">您的智能助手，帮助您处理日常任务、生成报告、回答问题，让工作更高效、更有价值。</p>
+          <p className="text-sm text-gray-500 mt-1">智能助手 · 基于企业知识库</p>
         </div>
-        <div className="flex items-center gap-3">
-          <span className="text-sm text-gray-500">{new Date().toLocaleDateString('zh-CN')}</span>
+        <div ref={historyRef} className="flex items-center gap-3 relative">
+          <button
+            onClick={() => setShowHistory(!showHistory)}
+            className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 hover:border-gray-300 transition-all duration-200"
+          >
+            <History className="w-4 h-4" />
+            会话历史
+          </button>
+          {showHistory && (
+            <div className="absolute top-full right-0 mt-2 w-72 bg-white rounded-xl border border-gray-200 shadow-lg z-50 overflow-hidden">
+              <div className="px-4 py-3 border-b border-gray-100">
+                <p className="text-sm font-bold text-gray-900">会话历史</p>
+              </div>
+              <div className="max-h-64 overflow-y-auto">
+                <div className="px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-gray-50">
+                  <p className="text-sm font-medium text-gray-900 truncate">帮我查一下最近的新办企业</p>
+                  <p className="text-xs text-gray-400 mt-1">今天 14:32</p>
+                </div>
+                <div className="px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-gray-50">
+                  <p className="text-sm font-medium text-gray-900 truncate">客户续费涨价怎么处理？</p>
+                  <p className="text-xs text-gray-400 mt-1">今天 10:15</p>
+                </div>
+                <div className="px-4 py-3 hover:bg-gray-50 cursor-pointer">
+                  <p className="text-sm font-medium text-gray-900 truncate">小微企业税收优惠政策</p>
+                  <p className="text-xs text-gray-400 mt-1">昨天 16:48</p>
+                </div>
+              </div>
+              <div className="px-4 py-3 border-t border-gray-100 bg-gray-50/50">
+                <button className="text-xs text-[#10B981] font-medium hover:underline">查看全部历史 →</button>
+              </div>
+            </div>
+          )}
+          <span className="text-sm text-gray-400">{new Date().toLocaleDateString('zh-CN')}</span>
         </div>
       </div>
 
       {/* 会话窗口 */}
       <div className="mb-6">
-        <AgentChat />
+        <AgentChat onModeChange={setChatMode} />
       </div>
 
-      {/* 下方卡片 */}
+      {/* 下方卡片 - 仅在初始状态显示 */}
+      {chatMode === 'welcome' && (
       <div className="grid grid-cols-4 gap-6">
         {/* 今日待办任务 */}
         <div className="bg-white rounded-xl p-5 border border-gray-100">
@@ -251,6 +300,7 @@ export default function AgentWorkspacePage() {
           </div>
         </div>
       </div>
+      )}
     </div>
   )
 }

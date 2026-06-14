@@ -10,7 +10,10 @@ import {
   AlertTriangle,
   BarChart3,
   HelpCircle,
-  Sparkles,
+  ArrowLeft,
+  Plus,
+  Folder,
+  Paperclip,
 } from 'lucide-react'
 
 interface ChatMessage {
@@ -26,38 +29,62 @@ interface ChatMessage {
 }
 
 const quickCommands = [
-  { command: '/审核', label: '待审核', icon: ClipboardCheck, color: 'text-amber-600 bg-amber-50 hover:bg-amber-100' },
-  { command: '/缺口', label: '知识缺口', icon: AlertTriangle, color: 'text-red-600 bg-red-50 hover:bg-red-100' },
-  { command: '/统计', label: '系统统计', icon: BarChart3, color: 'text-blue-600 bg-blue-50 hover:bg-blue-100' },
-  { command: '/帮助', label: '帮助', icon: HelpCircle, color: 'text-gray-600 bg-gray-50 hover:bg-gray-100' },
+  { command: '/审核', label: '待审核', icon: ClipboardCheck },
+  { command: '/缺口', label: '知识缺口', icon: AlertTriangle },
+  { command: '/统计', label: '系统统计', icon: BarChart3 },
+  { command: '/帮助', label: '帮助', icon: HelpCircle },
 ]
 
-export default function AgentChat() {
+interface AgentChatProps {
+  onModeChange?: (mode: 'welcome' | 'chat') => void
+}
+
+export default function AgentChat({ onModeChange }: AgentChatProps) {
+  const [mode, setMode] = useState<'welcome' | 'chat'>('welcome')
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
 
-  // 初始欢迎消息
+  // 通知父组件模式变化
   useEffect(() => {
-    setMessages([
-      {
-        role: 'agent',
-        content: '👋 你好！我是 GenericAgent 智能助手。\n\n你可以：\n• 直接输入问题，我会从知识库中检索回答\n• 使用快捷指令快速操作\n\n试试输入一个问题，或点击下方快捷按钮。',
-        timestamp: new Date().toISOString(),
-      },
-    ])
-  }, [])
+    onModeChange?.(mode)
+  }, [mode, onModeChange])
 
   // 自动滚动到底部
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages])
+    if (mode === 'chat' && messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' })
+    }
+  }, [messages, mode])
+
+  // 初始状态自动聚焦 textarea
+  useEffect(() => {
+    if (mode === 'welcome' && textareaRef.current) {
+      textareaRef.current.focus()
+    }
+  }, [mode])
+
+  const switchToChat = () => {
+    setMode('chat')
+  }
+
+  const switchToWelcome = () => {
+    setMode('welcome')
+    setMessages([])
+    setInput('')
+  }
 
   const sendMessage = async (text?: string) => {
     const messageText = text || input.trim()
     if (!messageText || loading) return
+
+    // 如果是初始状态，先切换到会话状态
+    if (mode === 'welcome') {
+      switchToChat()
+    }
 
     const userMessage: ChatMessage = {
       role: 'user',
@@ -113,14 +140,18 @@ export default function AgentChat() {
     }
   }
 
-  // 简单的 Markdown 转文本渲染
+  const handleTextareaKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault()
+      sendMessage()
+    }
+  }
+
+  // Markdown 渲染
   const renderContent = (content: string) => {
     return content.split('\n').map((line, i) => {
-      // 粗体
       let processed = line.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-      // 行内代码
       processed = processed.replace(/`(.+?)`/g, '<code class="px-1.5 py-0.5 bg-gray-100 rounded text-xs font-mono">$1</code>')
-      // 链接
       processed = processed.replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2" class="text-[#10B981] hover:underline">$1</a>')
 
       if (line.startsWith('• ') || line.startsWith('- ')) {
@@ -133,25 +164,96 @@ export default function AgentChat() {
     })
   }
 
+  // ==================== 初始状态 ====================
+  if (mode === 'welcome') {
+    return (
+      <div className="flex flex-col items-center justify-center py-12">
+        {/* 品牌图标 */}
+        <div className="w-20 h-20 bg-gradient-to-br from-[#10B981] to-[#059669] rounded-3xl flex items-center justify-center mb-6 shadow-lg shadow-[#10B981]/20">
+          <Bot className="w-10 h-10 text-white" />
+        </div>
+
+        {/* 标题 */}
+        <h2 className="text-2xl font-extrabold text-gray-900 mb-2">你好，有什么可以帮你？</h2>
+        <p className="text-sm text-gray-500 mb-8">我可以帮你查询知识库、审核经验、回答业务问题</p>
+
+        {/* 输入框 */}
+        <div className="w-full max-w-2xl">
+          <div className="relative bg-white rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-200">
+            <textarea
+              ref={textareaRef}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={handleTextareaKeyDown}
+              placeholder="有什么好想法？"
+              rows={2}
+              className="w-full px-5 pt-4 pb-12 bg-transparent rounded-2xl text-sm font-medium resize-none
+                         outline-none placeholder:text-gray-400"
+            />
+            {/* 底部工具栏 */}
+            <div className="absolute bottom-0 left-0 right-0 flex items-center justify-end px-4 pb-3">
+              <button
+                onClick={() => sendMessage()}
+                disabled={loading || !input.trim()}
+                className="w-9 h-9 bg-[#10B981] text-white rounded-xl flex items-center justify-center
+                           transition-all duration-200 hover:scale-[1.05] disabled:opacity-30 disabled:cursor-not-allowed"
+              >
+                <Send className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* 快捷标签 */}
+        <div className="flex items-center gap-2 mt-5">
+          {quickCommands.map((cmd) => {
+            const Icon = cmd.icon
+            return (
+              <button
+                key={cmd.command}
+                onClick={() => sendMessage(cmd.command)}
+                disabled={loading}
+                className="flex items-center gap-1.5 px-4 py-2 bg-gray-100 rounded-full text-xs font-medium
+                           text-gray-600 hover:bg-gray-200 transition-all duration-200 disabled:opacity-50"
+              >
+                <Icon className="w-3.5 h-3.5" />
+                {cmd.label}
+              </button>
+            )
+          })}
+        </div>
+      </div>
+    )
+  }
+
+  // ==================== 会话状态 ====================
   return (
-    <div className="flex flex-col h-[calc(100vh-12rem)] bg-white rounded-xl border border-gray-100 overflow-hidden">
+    <div className="flex flex-col h-[calc(100vh-280px)] min-h-[500px] bg-white rounded-xl border border-gray-100 overflow-hidden">
       {/* Header */}
-      <div className="flex items-center gap-3 px-5 py-4 border-b border-gray-100 bg-gradient-to-r from-[#10B981]/5 to-transparent">
-        <div className="w-10 h-10 bg-[#10B981] rounded-lg flex items-center justify-center">
-          <Bot className="w-5 h-5 text-white" />
+      <div className="flex items-center gap-3 px-5 py-4 border-b border-gray-100 flex-shrink-0">
+        <button
+          onClick={switchToWelcome}
+          className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 transition-colors"
+        >
+          <ArrowLeft className="w-4 h-4 text-gray-600" />
+        </button>
+        <div className="flex-1 min-w-0">
+          <h3 className="text-sm font-bold text-gray-900 truncate">GenericAgent 对话</h3>
         </div>
-        <div>
-          <h3 className="text-sm font-bold text-gray-900">GenericAgent</h3>
-          <p className="text-xs text-gray-500">智能助手 · 基于企业知识库</p>
-        </div>
-        <div className="ml-auto flex items-center gap-1.5">
-          <span className="w-2 h-2 bg-[#10B981] rounded-full animate-pulse" />
-          <span className="text-xs text-[#10B981] font-medium">在线</span>
-        </div>
+        <button
+          onClick={switchToWelcome}
+          className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 rounded-lg text-xs font-medium text-gray-600 hover:bg-gray-200 transition-colors"
+        >
+          <Plus className="w-3.5 h-3.5" />
+          新建对话
+        </button>
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
+      <div
+        className="flex-1 overflow-y-auto px-5 py-4 space-y-4"
+        style={{ scrollbarWidth: 'thin', scrollbarColor: '#d1d5db transparent' }}
+      >
         {messages.map((msg, index) => (
           <div
             key={index}
@@ -163,7 +265,7 @@ export default function AgentChat() {
               </div>
             )}
             <div
-              className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${
+              className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${
                 msg.role === 'user'
                   ? 'bg-[#10B981] text-white rounded-br-md'
                   : 'bg-gray-100 text-gray-800 rounded-bl-md'
@@ -204,30 +306,8 @@ export default function AgentChat() {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Quick Commands */}
-      <div className="px-5 py-2 border-t border-gray-50">
-        <div className="flex items-center gap-2 overflow-x-auto">
-          <Sparkles className="w-4 h-4 text-gray-400 flex-shrink-0" />
-          {quickCommands.map((cmd) => {
-            const Icon = cmd.icon
-            return (
-              <button
-                key={cmd.command}
-                onClick={() => sendMessage(cmd.command)}
-                disabled={loading}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium
-                           transition-all duration-200 flex-shrink-0 disabled:opacity-50 ${cmd.color}`}
-              >
-                <Icon className="w-3.5 h-3.5" />
-                {cmd.label}
-              </button>
-            )
-          })}
-        </div>
-      </div>
-
-      {/* Input */}
-      <div className="px-5 py-4 border-t border-gray-100">
+      {/* Input - fixed at bottom */}
+      <div className="px-5 py-4 border-t border-gray-100 flex-shrink-0 bg-white">
         <div className="flex items-center gap-3">
           <input
             ref={inputRef}
