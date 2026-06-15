@@ -6,7 +6,7 @@
 import { BaseEntityService } from './base-service'
 import { prisma } from '../prisma'
 import { hasExtendedVisibility } from '../permission-guard'
-import { notFound } from './base-types'
+import { notFound } from '../service-error'
 import type { AuthUser, EntityConfig, ListFilters } from './base-types'
 
 // ==================== 类型定义 ====================

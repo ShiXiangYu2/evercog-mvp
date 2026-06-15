@@ -14,7 +14,7 @@ import type {
   PaginatedResult,
   EntityConfig,
 } from './base-types'
-import { notFound, forbidden, optimisticLock } from './base-types'
+import { notFound, forbidden, optimisticLock } from '../service-error'
 
 // ==================== Prisma 妯″瀷鏄犲皠 ====================
 
@@ -171,6 +171,9 @@ export abstract class BaseEntityService<
 
   protected canReadRecord(record: TRecord, user: AuthUser): boolean {
     if (hasExtendedVisibility(user)) return true
+    // Record owner can always read their own records
+    const ownerId = getStringField(record, this.config.ownerField)
+    if (ownerId && ownerId === user.id) return true
     if (!this.config.accessDepartmentField) return true
     const departmentId = getStringField(record, this.config.accessDepartmentField)
     return departmentId === user.departmentId

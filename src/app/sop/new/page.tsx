@@ -63,14 +63,18 @@ export default function NewSOPTaskPage() {
 
     setSubmitting(true)
     try {
+      const payload: Record<string, unknown> = {
+        ...form,
+        mentorId: currentUser.id,
+      }
+      if (form.dueDate) {
+        payload.dueDate = new Date(form.dueDate).toISOString()
+      }
+
       const res = await fetch('/api/sop/tasks', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...form,
-          mentorId: currentUser.id,
-          dueDate: form.dueDate || null,
-        }),
+        body: JSON.stringify(payload),
       })
 
       if (res.ok) {

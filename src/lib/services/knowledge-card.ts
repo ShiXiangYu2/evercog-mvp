@@ -7,7 +7,7 @@
 import { BaseEntityService } from './base-service'
 import { canViewKnowledgeCard } from '../permission-guard'
 import { prisma } from '../prisma'
-import { forbidden } from './base-types'
+import { forbidden } from '../service-error'
 import type { AuthUser, EntityConfig, ListFilters, PaginatedResult } from './base-types'
 
 // ==================== 类型定义 ====================

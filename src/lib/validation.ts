@@ -1,21 +1,21 @@
-﻿/**
- * API 杈撳叆鏍￠獙 Schema
- * 浣跨敤 Zod 瀹氫箟鎵€鏈?API 鐨勮姹備綋鏍￠獙瑙勫垯
+/**
+ * API 输入校验 Schema
+ * 使用 Zod 定义所有 API 的请求体校验规则
  */
 import { z } from 'zod'
 
-// ==================== 閫氱敤 ====================
+// ==================== 通用 ====================
 
-/** 鍒嗛〉鍙傛暟 */
+/** 分页参数 */
 export const paginationSchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce.number().int().min(1).max(100).default(20),
 })
 
-// ==================== 鏀跨瓥閾炬帴 ====================
+// ==================== 政策链接 ====================
 
 export const createPolicyLinkSchema = z.object({
-  url: z.string().url('璇疯緭鍏ユ湁鏁堢殑 URL').max(2000),
+  url: z.string().url('请输入有效的 URL').max(2000),
   title: z.string().max(200).optional(),
   source: z.string().max(100).optional(),
   departmentId: z.string().optional(),
@@ -30,7 +30,7 @@ export const updatePolicyLinkSchema = z.object({
   status: z.enum(['submitted', 'collected', 'brief_generated', 'reviewed', 'pushed', 'archived']).optional(),
 })
 
-// ==================== 鏀跨瓥绠€鎶?====================
+// ==================== 政策简报 ====================
 
 export const generateBriefSchema = z.object({
 })
@@ -45,13 +45,13 @@ export const updateBriefSchema = z.object({
   reviewStatus: z.enum(['draft', 'pending_review', 'reviewed', 'rejected']).optional(),
 })
 
-// ==================== 鐭ヨ瘑鍗?====================
+// ==================== 知识卡 ====================
 
 export const createKnowledgeCardSchema = z.object({
-  title: z.string().min(1, '鏍囬涓嶈兘涓虹┖').max(200),
+  title: z.string().min(1, '标题不能为空').max(200),
   category: z.enum(['data_checklist', 'tax_process', 'risk_reminder', 'service_boundary', 'faq', 'experience']),
   tags: z.string().max(1000).optional(),
-  content: z.string().min(1, '鍐呭涓嶈兘涓虹┖').max(50000),
+  content: z.string().min(1, '内容不能为空').max(50000),
   departmentId: z.string().optional(),
   customerType: z.enum(['restaurant', 'retail', 'store', 'advertising', 'startup', 'individual']).optional(),
   source: z.string().max(200).optional(),
@@ -76,35 +76,35 @@ export const knowledgeCardStatusSchema = z.object({
   comment: z.string().max(2000).optional(),
 })
 
-// ==================== 缁忛獙璋冪敤 ====================
+// ==================== 经验调用 ====================
 
 export const experienceQuerySchema = z.object({
-  question: z.string().min(1, '闂涓嶈兘涓虹┖').max(2000, '闂鏈€闀?2000 瀛楃'),
+  question: z.string().min(1, '问题不能为空').max(2000, '问题最长 2000 字符'),
 })
 
-// ==================== SOP 璁粌 ====================
+// ==================== SOP 训练 ====================
 
 export const createSOPTaskSchema = z.object({
-  title: z.string().min(1, '鏍囬涓嶈兘涓虹┖').max(200),
+  title: z.string().min(1, '标题不能为空').max(200),
   description: z.string().max(2000).optional(),
   template: z.string().max(20000).optional(),
   requirements: z.string().max(2000).optional(),
-  mentorId: z.string().min(1, '瀵煎笀涓嶈兘涓虹┖'),
-  traineeId: z.string().min(1, '鏂颁汉涓嶈兘涓虹┖'),
-  dueDate: z.string().datetime().optional(),
+  mentorId: z.string().min(1, '导师不能为空'),
+  traineeId: z.string().min(1, '新人不能为空'),
+  dueDate: z.string().datetime().nullable().optional(),
 })
 
 export const submitSOPSchema = z.object({
-  content: z.string().min(1, '鎻愪氦鍐呭涓嶈兘涓虹┖').max(50000),
+  content: z.string().min(1, '提交内容不能为空').max(50000),
 })
 
 export const reviewSOPSchema = z.object({
-  submissionId: z.string().min(1, '鎻愪氦 ID 涓嶈兘涓虹┖'),
+  submissionId: z.string().min(1, '提交 ID 不能为空'),
   action: z.enum(['approve', 'reject', 'revision_required']),
   comment: z.string().max(2000).nullable().optional(),
 })
 
-// ==================== 鎺ㄩ€佽褰?====================
+// ==================== 推送记录 ====================
 
 export const createPushRecordSchema = z.object({
   policyBriefId: z.string().min(1, 'Policy brief is required'),
@@ -116,20 +116,20 @@ export const createPushRecordSchema = z.object({
   })).min(1, 'At least one push target is required'),
 })
 
-// ==================== 瀹¤鏃ュ織 ====================
+// ==================== 审计日志 ====================
 
 export const auditLogQuerySchema = paginationSchema.extend({
   entityType: z.string().optional(),
   action: z.string().optional(),
 })
 
-// ==================== 鏍￠獙宸ュ叿 ====================
+// ==================== 校验工具 ====================
 
 import { NextRequest, NextResponse } from 'next/server'
 
 /**
- * 鏍￠獙璇锋眰浣撳苟杩斿洖瑙ｆ瀽鍚庣殑鏁版嵁
- * 鏍￠獙澶辫触鏃惰嚜鍔ㄨ繑鍥?400 閿欒
+ * 校验请求体并返回解析后的数据
+ * 校验失败时自动返回 400 错误
  */
 export async function validateBody<T extends z.ZodType>(
   request: NextRequest,
@@ -143,7 +143,7 @@ export async function validateBody<T extends z.ZodType>(
       const errors = result.error.issues.map((issue) => `${issue.path.join('.')}: ${issue.message}`)
       return {
         error: NextResponse.json(
-          { error: '杈撳叆鏍￠獙澶辫触', details: errors },
+          { error: '输入校验失败', details: errors },
           { status: 400 }
         ),
       }
@@ -161,7 +161,7 @@ export async function validateBody<T extends z.ZodType>(
 }
 
 /**
- * 鏍￠獙鏌ヨ鍙傛暟
+ * 校验查询参数
  */
 export function validateQuery<T extends z.ZodType>(
   searchParams: URLSearchParams,
@@ -178,7 +178,7 @@ export function validateQuery<T extends z.ZodType>(
     const errors = result.error.issues.map((issue) => `${issue.path.join('.')}: ${issue.message}`)
     return {
       error: NextResponse.json(
-        { error: '鏌ヨ鍙傛暟鏍￠獙澶辫触', details: errors },
+        { error: '查询参数校验失败', details: errors },
         { status: 400 }
       ),
     }
